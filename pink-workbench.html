@@ -1167,7 +1167,12 @@
       .modal-footer .btn { flex: 1; justify-content: center; }
       
       /* 英语学习 */
-      .flash-tab { font-size: 0.78rem; padding: 0.5rem 0.7rem; }
+      .flash-tabs { flex-wrap: nowrap; gap: 0.15rem; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .flash-tab { font-size: 0.7rem; padding: 0.45rem 0.3rem; flex: 1; min-width: 0; justify-content: center; gap: 0.2rem; white-space: nowrap; }
+      .flash-tab .badge { font-size: 0.62rem; padding: 0.05rem 0.3rem; }
+      .sub-tabs { flex-wrap: nowrap; gap: 0.15rem; }
+      .sub-tab { font-size: 0.7rem; padding: 0.4rem 0.3rem; flex: 1; min-width: 0; justify-content: center; gap: 0.2rem; white-space: nowrap; }
+      .sub-tab .badge { font-size: 0.62rem; padding: 0.05rem 0.3rem; }
       .sentence-item { padding: 0.7rem 0.8rem; border-radius: 12px; }
       .sentence-en { font-family: var(--en-font); font-size: 0.85rem; line-height: 2.0; padding-bottom: 4px; overflow: visible; }
       .sentence-cn { font-size: 0.75rem; line-height: 1.6; padding-bottom: 2px; }
