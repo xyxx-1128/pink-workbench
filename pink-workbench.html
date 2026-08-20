@@ -806,7 +806,7 @@
     }
 
     /* === Flashcard System === */
-    .flash-tabs { display: flex; gap: 0.4rem; margin-bottom: 1.5rem; border-bottom: 2px solid var(--rule); }
+    .flash-tabs { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1.5rem; border-bottom: 2px solid var(--rule); }
     .flash-tab {
       padding: 0.6rem 1.1rem; cursor: pointer; border: none; background: none;
       font-family: var(--font); font-size: 0.88rem; font-weight: 600;
@@ -818,6 +818,19 @@
     .flash-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
     .flash-tab .badge { background: var(--bg3); color: var(--muted); padding: 0.05rem 0.45rem; border-radius: 6px; font-size: 0.72rem; }
     .flash-tab.active .badge { background: var(--accent); color: #fff; }
+
+    /* === Sub Tabs (inside 收藏夹/错题本) === */
+    .sub-tabs { display: flex; gap: 0.3rem; margin-bottom: 1rem; padding: 0.3rem; background: var(--bg2); border-radius: 10px; }
+    .sub-tab {
+      flex: 1; padding: 0.45rem 0.8rem; cursor: pointer; border: none; background: none;
+      font-family: var(--font); font-size: 0.82rem; font-weight: 600;
+      color: var(--muted); transition: all 0.2s;
+      border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 0.35rem;
+    }
+    .sub-tab:hover { color: var(--ink); }
+    .sub-tab.active { background: white; color: var(--accent); box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+    .sub-tab .badge { background: var(--bg3); color: var(--muted); padding: 0.05rem 0.4rem; border-radius: 6px; font-size: 0.7rem; }
+    .sub-tab.active .badge { background: var(--accent); color: #fff; }
 
     /* === Pagination === */
     .pagination { display: flex; justify-content: center; gap: 0.4rem; margin-top: 1rem; flex-wrap: wrap; }
@@ -1478,25 +1491,42 @@
     <div class="view" id="viewEnglish">
       <div class="flash-tabs">
         <button class="flash-tab active" data-tab="study" onclick="setFlashTab('study')">📚 学习中</button>
-        <button class="flash-tab" data-tab="review" onclick="setFlashTab('review')">🔄 周复习 <span class="badge" id="reviewBadge">0</span></button>
         <button class="flash-tab" data-tab="favorites" onclick="setFlashTab('favorites')">♡ 收藏夹 <span class="badge" id="favBadge">0</span></button>
-        <button class="flash-tab" data-tab="errors" onclick="setFlashTab('errors')">📝 错题本 <span class="badge" id="errBadge">0</span></button>
+        <button class="flash-tab" data-tab="errors" onclick="setFlashTab('errors')">⚠️ 错题本 <span class="badge" id="errBadge">0</span></button>
+        <button class="flash-tab" data-tab="review" onclick="setFlashTab('review')">🔄 周复习 <span class="badge" id="reviewBadge">0</span></button>
       </div>
       <div id="flashStudy">
         <div class="sentence-list" id="sentenceList"></div>
+      </div>
+      <div id="flashFavorites" style="display:none">
+        <div class="sub-tabs">
+          <button class="sub-tab active" data-subtab="favSentences" onclick="setFlashSubTab('favSentences')">📝 句子 <span class="badge" id="favSentenceBadge">0</span></button>
+          <button class="sub-tab" data-subtab="favWords" onclick="setFlashSubTab('favWords')">🔤 单词 <span class="badge" id="favWordBadge">0</span></button>
+        </div>
+        <div id="favSentencesPanel">
+          <div class="sentence-list" id="sentenceFavList"></div>
+        </div>
+        <div id="favWordsPanel" style="display:none">
+          <div class="sentence-list" id="wordFavList"></div>
+        </div>
+      </div>
+      <div id="flashErrors" style="display:none">
+        <div class="sub-tabs">
+          <button class="sub-tab active" data-subtab="errSentences" onclick="setFlashSubTab('errSentences')">📝 句子 <span class="badge" id="errSentenceBadge">0</span></button>
+          <button class="sub-tab" data-subtab="errWords" onclick="setFlashSubTab('errWords')">🔤 单词 <span class="badge" id="errWordBadge">0</span></button>
+        </div>
+        <div id="errSentencesPanel">
+          <div class="sentence-list" id="errSentList"></div>
+        </div>
+        <div id="errWordsPanel" style="display:none">
+          <div class="sentence-list" id="errWordList"></div>
+        </div>
       </div>
       <div id="flashReview" style="display:none">
         <div class="review-tip" style="background:rgba(147,51,234,0.06);border-radius:10px;padding:0.6rem 0.8rem;margin-bottom:0.8rem;font-size:0.78rem;color:#9333ea;line-height:1.5">
           📌 已掌握的句子会进入周复习，复习完可以移除。每周持续迭代，巩固记忆。
         </div>
         <div class="sentence-list" id="reviewList"></div>
-      </div>
-      <div id="flashFavorites" style="display:none">
-        <div class="sentence-list" id="favList"></div>
-        <div class="pagination" id="favPagination" style="display:flex;justify-content:center;gap:0.5rem;margin-top:1rem"></div>
-      </div>
-      <div id="flashErrors" style="display:none">
-        <div class="sentence-list" id="errList"></div>
       </div>
       <div class="hot-card" style="margin-top:1.5rem">
         <div class="hot-header"><h3>📰 BBC英语学习素材</h3><button class="hot-refresh" onclick="fetchBBCNews()">↻ 刷新</button></div>
@@ -3644,9 +3674,10 @@
       if (favSents.indexOf(idx) === -1) {
         favSents.push(idx);
         save('fc_fav_sents', favSents);
-        showToast('已收藏，移到收藏夹');
+        showToast('已收藏');
         updateFlashBadges();
         renderSentences();
+        if (flashTab === 'favorites' && flashSubTab === 'favSentences') renderSentenceFavList();
       }
     }
 
@@ -3657,6 +3688,7 @@
         showToast('已加入错题本');
         updateFlashBadges();
         renderSentences();
+        if (flashTab === 'errors' && flashSubTab === 'errSentences') renderErrSentList();
       }
     }
 
@@ -3819,6 +3851,7 @@
       }
       updateFlashBadges();
       renderSideWord();
+      if (flashTab === 'favorites' && flashSubTab === 'favWords') renderWordFavList();
     }
 
     function speakSideWord() {
@@ -3834,16 +3867,38 @@
     }
 
     // ===== Flashcard System =====
+    var flashSubTab = 'favSentences';
     function setFlashTab(tab) {
       flashTab = tab;
       document.querySelectorAll('.flash-tab').forEach(function(t) { t.classList.toggle('active', t.dataset.tab === tab); });
       document.getElementById('flashStudy').style.display = tab === 'study' ? 'block' : 'none';
-      document.getElementById('flashReview').style.display = tab === 'review' ? 'block' : 'none';
       document.getElementById('flashFavorites').style.display = tab === 'favorites' ? 'block' : 'none';
       document.getElementById('flashErrors').style.display = tab === 'errors' ? 'block' : 'none';
+      document.getElementById('flashReview').style.display = tab === 'review' ? 'block' : 'none';
+      if (tab === 'favorites') { setFlashSubTab(flashSubTab === 'errSentences' || flashSubTab === 'errWords' ? 'favSentences' : flashSubTab); }
+      if (tab === 'errors') { setFlashSubTab(flashSubTab === 'favSentences' || flashSubTab === 'favWords' ? 'errSentences' : flashSubTab); }
       if (tab === 'review') renderReviewGrid();
-      if (tab === 'favorites') { favPage = 1; renderFavGrid(); }
-      if (tab === 'errors') renderErrGrid();
+    }
+
+    function setFlashSubTab(sub) {
+      flashSubTab = sub;
+      document.querySelectorAll('.sub-tab').forEach(function(t) { t.classList.toggle('active', t.dataset.subtab === sub); });
+      var isFavSent = sub === 'favSentences';
+      var isFavWord = sub === 'favWords';
+      var isErrSent = sub === 'errSentences';
+      var isErrWord = sub === 'errWords';
+      var favSP = document.getElementById('favSentencesPanel');
+      var favWP = document.getElementById('favWordsPanel');
+      var errSP = document.getElementById('errSentencesPanel');
+      var errWP = document.getElementById('errWordsPanel');
+      if (favSP) favSP.style.display = isFavSent ? 'block' : 'none';
+      if (favWP) favWP.style.display = isFavWord ? 'block' : 'none';
+      if (errSP) errSP.style.display = isErrSent ? 'block' : 'none';
+      if (errWP) errWP.style.display = isErrWord ? 'block' : 'none';
+      if (isFavSent) renderSentenceFavList();
+      if (isFavWord) renderWordFavList();
+      if (isErrSent) renderErrSentList();
+      if (isErrWord) renderErrWordList();
     }
 
     function renderFlashcard() {
@@ -3868,6 +3923,7 @@
         errorWords.push({ word: w.word, phonetic: w.phonetic, meaning: w.meaning });
         save('fc_err', errorWords);
         updateFlashBadges();
+        if (flashTab === 'errors' && flashSubTab === 'errWords') renderErrWordList();
       }
       showToast('已加入错题本');
       nextFlashcard();
@@ -3887,6 +3943,7 @@
       }
       updateFlashBadges();
       renderFlashcard();
+      if (flashTab === 'favorites' && flashSubTab === 'favWords') renderWordFavList();
     }
 
     function nextFlashcard() {
@@ -3907,128 +3964,135 @@
       playNaturalTTS(word, function() { if (btn) stopSpeakAnim(btn); }, function() { if (btn) stopSpeakAnim(btn); });
     }
 
-    function renderFavGrid() {
-      var c = document.getElementById('favList');
-      var pagC = document.getElementById('favPagination');
-      if (favWords.length === 0 && favSents.length === 0) {
-        c.innerHTML = '<div class="empty"><img src="icon-sheep.jpg" style="width:48px;height:48px;border-radius:50%;opacity:0.4;object-fit:cover;margin-bottom:0.75rem"><p>还没有收藏的内容，学习中点击收藏吧</p></div>';
-        pagC.innerHTML = '';
+    function renderSentenceFavList() {
+      var c = document.getElementById('sentenceFavList');
+      if (!c) return;
+      if (favSents.length === 0) {
+        c.innerHTML = '<div class="empty"><img src="icon-sheep.jpg" style="width:48px;height:48px;border-radius:50%;opacity:0.4;object-fit:cover;margin-bottom:0.75rem"><p>还没有收藏的句子<br>在学习中点击 ☆ 收藏句子</p></div>';
         return;
       }
       var html = '';
-      var num;
-      // ===== 句子分组 =====
-      if (favSents.length > 0) {
-        html += '<div class="fav-group-title">📝 句子 <span class="group-count">' + favSents.length + '</span></div>';
-        num = 1;
-        favSents.forEach(function(idx) {
-          var s = getSent(idx);
-          if (!s) return;
-          html += '<div class="sentence-item">'
-            + '<div class="sentence-num">' + num++ + '</div>'
-            + '<div class="sentence-body">'
-            + '<div class="sentence-en">' + esc(s.en) + '</div>'
-            + '<div class="sentence-cn">' + esc(s.cn) + '</div>'
-            + '<div class="sentence-actions">'
-            + '<button class="s-btn speak-btn" onclick="speakSentence(' + idx + ', this)"><span class="speak-icon-wrap"><span class="speaker-emoji">🔊</span><span class="speaker-wave"></span><span class="speaker-wave"></span></span> 朗读</button>'
-            + '<button class="s-btn" onclick="removeFavSent(' + idx + ')" style="color:var(--danger)">✕ 移除</button>'
-            + '</div></div></div>';
-        });
-      }
-      // ===== 单词分组 =====
-      if (favWords.length > 0) {
-        html += '<div class="fav-group-title">🔤 单词 <span class="group-count">' + favWords.length + '</span></div>';
-        num = 1;
-        favWords.forEach(function(w, i) {
-          html += '<div class="sentence-item">'
-            + '<div class="sentence-num">' + num++ + '</div>'
-            + '<div class="sentence-body">'
-            + '<div class="sentence-en">' + w.word + ' <span style="font-size:0.85rem;color:#9333ea;font-weight:400">' + w.phonetic + '</span></div>'
-            + '<div class="sentence-cn">' + w.meaning + '</div>'
-            + '<div class="sentence-actions">'
-            + '<button class="s-btn speak-btn" onclick="speakWordObj(\'' + w.word + '\', this)"><span class="speak-icon-wrap"><span class="speaker-emoji">🔊</span><span class="speaker-wave"></span><span class="speaker-wave"></span></span> 朗读</button>'
-            + '<button class="s-btn" onclick="removeFav(' + i + ')" style="color:var(--danger)">✕ 移除</button>'
-            + '</div></div></div>';
-        });
-      }
+      favSents.forEach(function(idx, i) {
+        var s = getSent(idx);
+        if (!s) return;
+        html += '<div class="sentence-item">'
+          + '<div class="sentence-num">' + (i + 1) + '</div>'
+          + '<div class="sentence-body">'
+          + '<div class="sentence-en">' + esc(s.en) + '</div>'
+          + '<div class="sentence-cn">' + esc(s.cn) + '</div>'
+          + '<div class="sentence-actions">'
+          + '<button class="s-btn speak-btn" onclick="speakSentence(' + idx + ', this)"><span class="speak-icon-wrap"><span class="speaker-emoji">🔊</span><span class="speaker-wave"></span><span class="speaker-wave"></span></span> 朗读</button>'
+          + '<button class="s-btn" onclick="removeFavSent(' + idx + ')" style="color:var(--danger)">✕ 移除</button>'
+          + '</div></div></div>';
+      });
       c.innerHTML = html;
-      pagC.innerHTML = '';
     }
 
-    function goFavPage(p) {
-      var totalPages = Math.ceil((favWords.length + favSents.length) / FAV_PER_PAGE);
-      if (p < 1) p = 1;
-      if (p > totalPages) p = totalPages;
-      favPage = p;
-      renderFavGrid();
+    function renderWordFavList() {
+      var c = document.getElementById('wordFavList');
+      if (!c) return;
+      if (favWords.length === 0) {
+        c.innerHTML = '<div class="empty"><img src="icon-sheep.jpg" style="width:48px;height:48px;border-radius:50%;opacity:0.4;object-fit:cover;margin-bottom:0.75rem"><p>还没有收藏的单词<br>点击侧栏单词卡片 ♡ 收藏</p></div>';
+        return;
+      }
+      var html = '';
+      favWords.forEach(function(w, i) {
+        html += '<div class="sentence-item">'
+          + '<div class="sentence-num">' + (i + 1) + '</div>'
+          + '<div class="sentence-body">'
+          + '<div class="sentence-en">' + w.word + ' <span style="font-size:0.85rem;color:#9333ea;font-weight:400">' + w.phonetic + '</span></div>'
+          + '<div class="sentence-cn">' + w.meaning + '</div>'
+          + '<div class="sentence-actions">'
+          + '<button class="s-btn speak-btn" onclick="speakWordObj(\'' + w.word + '\', this)"><span class="speak-icon-wrap"><span class="speaker-emoji">🔊</span><span class="speaker-wave"></span><span class="speaker-wave"></span></span> 朗读</button>'
+          + '<button class="s-btn" onclick="removeFav(' + i + ')" style="color:var(--danger)">✕ 移除</button>'
+          + '</div></div></div>';
+      });
+      c.innerHTML = html;
     }
 
     function renderFavWordsPage() {
-      if (flashTab === 'favorites') renderFavGrid();
+      if (flashTab === 'favorites') {
+        if (flashSubTab === 'favSentences') renderSentenceFavList();
+        if (flashSubTab === 'favWords') renderWordFavList();
+      }
+      if (flashTab === 'errors') {
+        if (flashSubTab === 'errSentences') renderErrSentList();
+        if (flashSubTab === 'errWords') renderErrWordList();
+      }
     }
 
-    function renderErrGrid() {
-      var c = document.getElementById('errList');
+    function renderErrSentList() {
+      var c = document.getElementById('errSentList');
       if (!c) return;
-      if (errorWords.length === 0 && errSents.length === 0) { 
-        c.innerHTML = '<div class="empty"><img src="icon-sheep.jpg" style="width:48px;height:48px;border-radius:50%;opacity:0.4;object-fit:cover;margin-bottom:0.75rem"><p>错题本是空的，继续加油！</p></div>'; 
-        return; 
+      if (errSents.length === 0) {
+        c.innerHTML = '<div class="empty"><img src="icon-sheep.jpg" style="width:48px;height:48px;border-radius:50%;opacity:0.4;object-fit:cover;margin-bottom:0.75rem"><p>错题句子为空<br>在学习中点击 ⚠️ 标记错题</p></div>';
+        return;
       }
       var html = '';
-      var num;
-      // ===== 句子分组 =====
-      if (errSents.length > 0) {
-        html += '<div class="fav-group-title">📝 句子 <span class="group-count">' + errSents.length + '</span></div>';
-        num = 1;
-        errSents.forEach(function(idx) {
-          var s = getSent(idx);
-          if (!s) return;
-          html += '<div class="sentence-item" style="border-left:3px solid var(--warning)">'
-            + '<div class="sentence-num">' + num++ + '</div>'
-            + '<div class="sentence-body">'
-            + '<div class="sentence-en">' + esc(s.en) + '</div>'
-            + '<div class="sentence-cn">' + esc(s.cn) + '</div>'
-            + '<div class="sentence-actions">'
-            + '<button class="s-btn speak-btn" onclick="speakSentence(' + idx + ', this)"><span class="speak-icon-wrap"><span class="speaker-emoji">🔊</span><span class="speaker-wave"></span><span class="speaker-wave"></span></span> 朗读</button>'
-            + '<button class="s-btn" onclick="markSentMastered(' + idx + ')" style="color:var(--success)">✓ 已掌握</button>'
-            + '</div></div></div>';
-        });
-      }
-      // ===== 单词分组 =====
-      if (errorWords.length > 0) {
-        html += '<div class="fav-group-title">🔤 单词 <span class="group-count">' + errorWords.length + '</span></div>';
-        num = 1;
-        errorWords.forEach(function(w) {
-          html += '<div class="sentence-item" style="border-left:3px solid var(--warning)">'
-            + '<div class="sentence-num">' + num++ + '</div>'
-            + '<div class="sentence-body">'
-            + '<div class="sentence-en">' + w.word + ' <span style="font-size:0.85rem;color:#9333ea;font-weight:400">' + w.phonetic + '</span></div>'
-            + '<div class="sentence-cn">' + w.meaning + '</div>'
-            + '<div class="sentence-actions">'
-            + '<button class="s-btn speak-btn" onclick="speakWordObj(\'' + w.word + '\', this)"><span class="speak-icon-wrap"><span class="speaker-emoji">🔊</span><span class="speaker-wave"></span><span class="speaker-wave"></span></span> 朗读</button>'
-            + '<button class="s-btn" onclick="markMastered(\'' + w.word + '\')" style="color:var(--success)">✓ 已掌握</button>'
-            + '</div></div></div>';
-        });
-      }
+      errSents.forEach(function(idx, i) {
+        var s = getSent(idx);
+        if (!s) return;
+        html += '<div class="sentence-item" style="border-left:3px solid var(--warning)">'
+          + '<div class="sentence-num">' + (i + 1) + '</div>'
+          + '<div class="sentence-body">'
+          + '<div class="sentence-en">' + esc(s.en) + '</div>'
+          + '<div class="sentence-cn">' + esc(s.cn) + '</div>'
+          + '<div class="sentence-actions">'
+          + '<button class="s-btn speak-btn" onclick="speakSentence(' + idx + ', this)"><span class="speak-icon-wrap"><span class="speaker-emoji">🔊</span><span class="speaker-wave"></span><span class="speaker-wave"></span></span> 朗读</button>'
+          + '<button class="s-btn" onclick="markSentMastered(' + idx + ')" style="color:var(--success)">✓ 已掌握</button>'
+          + '</div></div></div>';
+      });
       c.innerHTML = html;
     }
 
-    function removeFav(idx) { favWords.splice(idx, 1); save('fc_fav', favWords); updateFlashBadges(); renderFavGrid(); showToast('已移除'); }
-    function markMastered(word) { 
+    function renderErrWordList() {
+      var c = document.getElementById('errWordList');
+      if (!c) return;
+      if (errorWords.length === 0) {
+        c.innerHTML = '<div class="empty"><img src="icon-sheep.jpg" style="width:48px;height:48px;border-radius:50%;opacity:0.4;object-fit:cover;margin-bottom:0.75rem"><p>错题单词为空<br>在单词卡片点击 ⚠️ 加入错题</p></div>';
+        return;
+      }
+      var html = '';
+      errorWords.forEach(function(w, i) {
+        html += '<div class="sentence-item" style="border-left:3px solid var(--warning)">'
+          + '<div class="sentence-num">' + (i + 1) + '</div>'
+          + '<div class="sentence-body">'
+          + '<div class="sentence-en">' + w.word + ' <span style="font-size:0.85rem;color:#9333ea;font-weight:400">' + w.phonetic + '</span></div>'
+          + '<div class="sentence-cn">' + w.meaning + '</div>'
+          + '<div class="sentence-actions">'
+          + '<button class="s-btn speak-btn" onclick="speakWordObj(\'' + w.word + '\', this)"><span class="speak-icon-wrap"><span class="speaker-emoji">🔊</span><span class="speaker-wave"></span><span class="speaker-wave"></span></span> 朗读</button>'
+          + '<button class="s-btn" onclick="markMastered(\'' + w.word + '\')" style="color:var(--success)">✓ 已掌握</button>'
+          + '</div></div></div>';
+      });
+      c.innerHTML = html;
+    }
+
+    function removeFav(idx) { favWords.splice(idx, 1); save('fc_fav', favWords); updateFlashBadges(); if (flashTab === 'favorites' && flashSubTab === 'favWords') renderWordFavList(); showToast('已移除'); }
+    function markMastered(word) {
       var idx = errorWords.findIndex(function(w) { return w.word === word; });
-      if (idx !== -1) { 
-        errorWords.splice(idx, 1); 
-        save('fc_err', errorWords); 
-        updateFlashBadges(); 
-        renderErrGrid(); 
-        showToast('已掌握，从错题本移除'); 
+      if (idx !== -1) {
+        errorWords.splice(idx, 1);
+        save('fc_err', errorWords);
+        updateFlashBadges();
+        if (flashTab === 'errors' && flashSubTab === 'errWords') renderErrWordList();
+        showToast('已掌握，从错题本移除');
       }
     }
-    function removeFavSent(idx) { var pos = favSents.indexOf(idx); if (pos !== -1) { favSents.splice(pos, 1); save('fc_fav_sents', favSents); updateFlashBadges(); renderFavGrid(); showToast('已移除'); } }
-    function markSentMastered(idx) { var pos = errSents.indexOf(idx); if (pos !== -1) { errSents.splice(pos, 1); save('fc_err_sents', errSents); updateFlashBadges(); renderErrGrid(); showToast('已掌握，从错题本移除'); } }
+    function removeFavSent(idx) { var pos = favSents.indexOf(idx); if (pos !== -1) { favSents.splice(pos, 1); save('fc_fav_sents', favSents); updateFlashBadges(); if (flashTab === 'favorites' && flashSubTab === 'favSentences') renderSentenceFavList(); showToast('已移除'); } }
+    function markSentMastered(idx) { var pos = errSents.indexOf(idx); if (pos !== -1) { errSents.splice(pos, 1); save('fc_err_sents', errSents); updateFlashBadges(); if (flashTab === 'errors' && flashSubTab === 'errSentences') renderErrSentList(); showToast('已掌握，从错题本移除'); } }
     function updateFlashBadges() {
-      document.getElementById('favBadge').textContent = favWords.length + favSents.length;
-      document.getElementById('errBadge').textContent = errorWords.length + errSents.length;
+      var fb = document.getElementById('favBadge');
+      if (fb) fb.textContent = favWords.length + favSents.length;
+      var fsb = document.getElementById('favSentenceBadge');
+      if (fsb) fsb.textContent = favSents.length;
+      var fwb = document.getElementById('favWordBadge');
+      if (fwb) fwb.textContent = favWords.length;
+      var eb = document.getElementById('errBadge');
+      if (eb) eb.textContent = errorWords.length + errSents.length;
+      var esb = document.getElementById('errSentenceBadge');
+      if (esb) esb.textContent = errSents.length;
+      var ewb = document.getElementById('errWordBadge');
+      if (ewb) ewb.textContent = errorWords.length;
       var rb = document.getElementById('reviewBadge');
       if (rb) rb.textContent = masteredSents.length;
     }
