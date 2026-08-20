@@ -5043,7 +5043,7 @@
     function closePeriodOutside(e) { if (e.target.id === 'periodModal') closePeriodModal(); }
     function savePeriod() {
       var p = { start: document.getElementById('pStart').value, days: parseInt(document.getElementById('pDays').value) || 5, cycle: parseInt(document.getElementById('pCycle').value) || 28, note: document.getElementById('pNote').value.trim() };
-      save('period', p); closePeriodModal(); renderPeriod(); showToast('经期记录已保存');
+      save('period', p); closePeriodModal(); renderPeriodView(); renderPeriod(); showToast('经期记录已保存');
     }
 
     // ===== Diary Modal =====
