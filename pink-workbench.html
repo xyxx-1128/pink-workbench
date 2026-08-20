@@ -2211,8 +2211,8 @@
       // 判断当前阶段（按实际周期天数计算）
       var ovulationDay = Math.round(p.cycle / 2);
       var periodEnd = p.days;
-      var ovuStart = Math.max(ovulationDay - 5, periodEnd + 1);
-      var ovuEnd = ovulationDay + 4;
+      var ovuStart = Math.max(ovulationDay - 2, periodEnd + 1);
+      var ovuEnd = ovulationDay + 2;
       var follicularEnd = ovuStart - 1;
 
       var phase = '', phaseColor = '';
@@ -2252,8 +2252,8 @@
       var cycle = p.cycle;
       var periodDays = p.days;
       var ovulationDay = Math.round(cycle / 2);
-      var ovuStart = Math.max(ovulationDay - 5, periodDays + 1);
-      var ovuEnd = Math.min(ovulationDay + 4, cycle);
+      var ovuStart = Math.max(ovulationDay - 2, periodDays + 1);
+      var ovuEnd = Math.min(ovulationDay + 2, cycle);
       var gap = 1.5;
 
       // 美柚配色：月经期(淡粉), 卵泡期(淡蓝), 排卵期(淡紫), 黄体期(橙色)
