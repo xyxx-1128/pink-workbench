@@ -806,7 +806,7 @@
     }
 
     /* === Flashcard System === */
-    .flash-tabs { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1.5rem; border-bottom: 2px solid var(--rule); }
+    .flash-tabs { display: flex; gap: 0.4rem; margin-bottom: 1.5rem; border-bottom: 2px solid var(--rule); }
     .flash-tab {
       padding: 0.6rem 1.1rem; cursor: pointer; border: none; background: none;
       font-family: var(--font); font-size: 0.88rem; font-weight: 600;
@@ -818,19 +818,6 @@
     .flash-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
     .flash-tab .badge { background: var(--bg3); color: var(--muted); padding: 0.05rem 0.45rem; border-radius: 6px; font-size: 0.72rem; }
     .flash-tab.active .badge { background: var(--accent); color: #fff; }
-
-    /* === Sub Tabs (inside 收藏夹/错题本) === */
-    .sub-tabs { display: flex; gap: 0.3rem; margin-bottom: 1rem; padding: 0.3rem; background: var(--bg2); border-radius: 10px; }
-    .sub-tab {
-      flex: 1; padding: 0.45rem 0.8rem; cursor: pointer; border: none; background: none;
-      font-family: var(--font); font-size: 0.82rem; font-weight: 600;
-      color: var(--muted); transition: all 0.2s;
-      border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 0.35rem;
-    }
-    .sub-tab:hover { color: var(--ink); }
-    .sub-tab.active { background: white; color: var(--accent); box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
-    .sub-tab .badge { background: var(--bg3); color: var(--muted); padding: 0.05rem 0.4rem; border-radius: 6px; font-size: 0.7rem; }
-    .sub-tab.active .badge { background: var(--accent); color: #fff; }
 
     /* === Pagination === */
     .pagination { display: flex; justify-content: center; gap: 0.4rem; margin-top: 1rem; flex-wrap: wrap; }
@@ -1491,42 +1478,25 @@
     <div class="view" id="viewEnglish">
       <div class="flash-tabs">
         <button class="flash-tab active" data-tab="study" onclick="setFlashTab('study')">📚 学习中</button>
-        <button class="flash-tab" data-tab="favorites" onclick="setFlashTab('favorites')">♡ 收藏夹 <span class="badge" id="favBadge">0</span></button>
-        <button class="flash-tab" data-tab="errors" onclick="setFlashTab('errors')">⚠️ 错题本 <span class="badge" id="errBadge">0</span></button>
         <button class="flash-tab" data-tab="review" onclick="setFlashTab('review')">🔄 周复习 <span class="badge" id="reviewBadge">0</span></button>
+        <button class="flash-tab" data-tab="favorites" onclick="setFlashTab('favorites')">♡ 收藏夹 <span class="badge" id="favBadge">0</span></button>
+        <button class="flash-tab" data-tab="errors" onclick="setFlashTab('errors')">📝 错题本 <span class="badge" id="errBadge">0</span></button>
       </div>
       <div id="flashStudy">
         <div class="sentence-list" id="sentenceList"></div>
-      </div>
-      <div id="flashFavorites" style="display:none">
-        <div class="sub-tabs">
-          <button class="sub-tab active" data-subtab="favSentences" onclick="setFlashSubTab('favSentences')">📝 句子 <span class="badge" id="favSentenceBadge">0</span></button>
-          <button class="sub-tab" data-subtab="favWords" onclick="setFlashSubTab('favWords')">🔤 单词 <span class="badge" id="favWordBadge">0</span></button>
-        </div>
-        <div id="favSentencesPanel">
-          <div class="sentence-list" id="sentenceFavList"></div>
-        </div>
-        <div id="favWordsPanel" style="display:none">
-          <div class="sentence-list" id="wordFavList"></div>
-        </div>
-      </div>
-      <div id="flashErrors" style="display:none">
-        <div class="sub-tabs">
-          <button class="sub-tab active" data-subtab="errSentences" onclick="setFlashSubTab('errSentences')">📝 句子 <span class="badge" id="errSentenceBadge">0</span></button>
-          <button class="sub-tab" data-subtab="errWords" onclick="setFlashSubTab('errWords')">🔤 单词 <span class="badge" id="errWordBadge">0</span></button>
-        </div>
-        <div id="errSentencesPanel">
-          <div class="sentence-list" id="errSentList"></div>
-        </div>
-        <div id="errWordsPanel" style="display:none">
-          <div class="sentence-list" id="errWordList"></div>
-        </div>
       </div>
       <div id="flashReview" style="display:none">
         <div class="review-tip" style="background:rgba(147,51,234,0.06);border-radius:10px;padding:0.6rem 0.8rem;margin-bottom:0.8rem;font-size:0.78rem;color:#9333ea;line-height:1.5">
           📌 已掌握的句子会进入周复习，复习完可以移除。每周持续迭代，巩固记忆。
         </div>
         <div class="sentence-list" id="reviewList"></div>
+      </div>
+      <div id="flashFavorites" style="display:none">
+        <div class="sentence-list" id="favList"></div>
+        <div class="pagination" id="favPagination" style="display:flex;justify-content:center;gap:0.5rem;margin-top:1rem"></div>
+      </div>
+      <div id="flashErrors" style="display:none">
+        <div class="sentence-list" id="errList"></div>
       </div>
       <div class="hot-card" style="margin-top:1.5rem">
         <div class="hot-header"><h3>📰 BBC英语学习素材</h3><button class="hot-refresh" onclick="fetchBBCNews()">↻ 刷新</button></div>
@@ -1733,43 +1703,41 @@
       <!-- 周期圆盘 -->
       <div class="period-wheel-card">
         <div class="pw-container">
-          <svg class="pw-svg" viewBox="-30 -30 380 380" id="periodWheel">
+          <svg class="pw-svg" viewBox="-15 -15 350 350" id="periodWheel">
             <defs id="wheelDefs">
-              <linearGradient id="gradLuteal" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#FFD89E" stop-opacity="0.9"/>
-                <stop offset="100%" stop-color="#FF9500" stop-opacity="0.95"/>
+              <linearGradient id="pointerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#ec4899" stop-opacity="0.9"/>
+                <stop offset="100%" stop-color="#ec4899" stop-opacity="0.2"/>
               </linearGradient>
             </defs>
+            <!-- 外圈装饰 -->
+            <circle cx="160" cy="160" r="152" fill="none" stroke="rgba(236,72,153,0.06)" stroke-width="1" stroke-dasharray="2 4"/>
             <!-- 动态生成的扇区 -->
             <g id="wheelSectors"></g>
-            <!-- 扇区内的白点进度（当前阶段） -->
-            <g id="wheelProgressDots"></g>
-            <!-- 当前日位置标记 -->
-            <g id="wheelDayMarker"></g>
-            <!-- 阶段标签（外侧） -->
-            <g id="wheelLabels"></g>
+            <!-- 日标记 -->
+            <g id="wheelDayMarks"></g>
             <!-- 中心白圆 + 装饰环 -->
-            <circle cx="160" cy="160" r="62" fill="white" opacity="0.98"/>
-            <circle cx="160" cy="160" r="62" fill="none" stroke="rgba(255,149,0,0.15)" stroke-width="1"/>
-            <!-- 中心橙色圆点 -->
-            <circle cx="160" cy="160" r="5" fill="#FF9500"/>
-            <!-- 橙色箭头指针 -->
+            <circle cx="160" cy="160" r="65" fill="white" opacity="0.96"/>
+            <circle cx="160" cy="160" r="65" fill="none" stroke="rgba(236,72,153,0.18)" stroke-width="1.5"/>
+            <circle cx="160" cy="160" r="59" fill="none" stroke="rgba(236,72,153,0.08)" stroke-width="1"/>
+            <!-- 指针 -->
             <g id="wheelPointer" transform="rotate(0, 160, 160)">
-              <line x1="160" y1="160" x2="160" y2="30" stroke="#FF9500" stroke-width="2.5" stroke-linecap="round"/>
-              <polygon points="155,32 160,18 165,32" fill="#FF9500"/>
+              <line x1="160" y1="160" x2="160" y2="28" stroke="#ec4899" stroke-opacity="0.5" stroke-width="3" stroke-linecap="round"/>
+              <circle cx="160" cy="28" r="8" fill="#ec4899" stroke="white" stroke-width="3"/>
+              <circle cx="160" cy="28" r="3" fill="white" opacity="0.95"/>
             </g>
             <!-- 中心文字 -->
-            <text x="160" y="138" text-anchor="middle" font-size="14" fill="#9ca3af" font-weight="500">当前阶段</text>
-            <text x="160" y="168" text-anchor="middle" font-size="24" fill="#FF9500" font-weight="700" id="wheelPhase">月经期</text>
-            <text x="160" y="192" text-anchor="middle" font-size="16" fill="#6b7280" font-weight="600" id="wheelDay">第1天 / 28天</text>
+            <text x="160" y="133" text-anchor="middle" font-size="15" fill="#9ca3af" font-weight="500">当前阶段</text>
+            <text x="160" y="163" text-anchor="middle" font-size="26" fill="#ec4899" font-weight="700" id="wheelPhase">月经期</text>
+            <text x="160" y="190" text-anchor="middle" font-size="18" fill="#6b7280" font-weight="600" id="wheelDay">第1天 / 28天</text>
           </svg>
         </div>
         <!-- 图例 -->
         <div class="pw-legend" id="wheelLegend">
-          <div class="pw-legend-item"><span class="pw-dot" style="background:#FFB6C1"></span><span>月经期</span></div>
-          <div class="pw-legend-item"><span class="pw-dot" style="background:#93C5FD"></span><span>卵泡期</span></div>
-          <div class="pw-legend-item"><span class="pw-dot" style="background:#C4B5FD"></span><span>排卵期</span></div>
-          <div class="pw-legend-item"><span class="pw-dot" style="background:#FF9500"></span><span>黄体期</span></div>
+          <div class="pw-legend-item"><span class="pw-dot" style="background:#ec4899"></span><span>月经期</span></div>
+          <div class="pw-legend-item"><span class="pw-dot" style="background:#10b981"></span><span>卵泡期</span></div>
+          <div class="pw-legend-item"><span class="pw-dot" style="background:#f59e0b"></span><span>排卵期</span></div>
+          <div class="pw-legend-item"><span class="pw-dot" style="background:#3b82f6"></span><span>黄体期</span></div>
         </div>
       </div>
 
@@ -2197,7 +2165,7 @@
       var wheelDay = document.getElementById('wheelDay');
 
       // 动态生成圆盘扇区（根据实际周期天数）
-      renderWheelSectors(p, cycleDay);
+      renderWheelSectors(p);
 
       // 指针角度：第1天=0度(正上方)，顺时针，第cycle天接近360度
       var angle = ((cycleDay - 1) / p.cycle) * 360;
@@ -2209,28 +2177,28 @@
       var nextDiff = Math.floor((nextStart - today) / 86400000);
 
       // 判断当前阶段（按实际周期天数计算）
-      var ovulationDay = Math.round(p.cycle / 2);
+      var ovulationDay = Math.round(p.cycle / 2); // 排卵日约为周期中点
       var periodEnd = p.days;
-      var ovuStart = Math.max(ovulationDay - 2, periodEnd + 1);
-      var ovuEnd = ovulationDay + 2;
+      var ovuStart = Math.max(ovulationDay - 5, periodEnd + 1); // 易孕期起点：排卵日前5天（不早于经期结束）
+      var ovuEnd = ovulationDay + 4; // 易孕期终点：排卵日后4天，共约10天
       var follicularEnd = ovuStart - 1;
 
       var phase = '', phaseColor = '';
       if (cycleDay <= periodEnd) {
-        phase = '月经期'; phaseColor = '#FF93A8';
+        phase = '月经期'; phaseColor = '#ec4899';
         var remain = periodEnd - cycleDay + 1;
         labelEl.textContent = '经期中 · 还剩';
         cdEl.innerHTML = '<span class="psr-num">' + remain + '</span> 天';
       } else if (cycleDay <= follicularEnd) {
-        phase = '卵泡期'; phaseColor = '#60A5FA';
+        phase = '卵泡期'; phaseColor = '#10b981';
         if (nextDiff > 0) { labelEl.textContent = '距下次姨妈'; cdEl.innerHTML = '<span class="psr-num">' + nextDiff + '</span> 天'; }
         else { labelEl.textContent = '已延期'; cdEl.innerHTML = '<span class="psr-num">' + Math.abs(nextDiff) + '</span> 天'; }
       } else if (cycleDay <= ovuEnd) {
-        phase = '排卵期'; phaseColor = '#A78BFA';
+        phase = '排卵期'; phaseColor = '#f59e0b';
         if (nextDiff > 0) { labelEl.textContent = '距下次姨妈'; cdEl.innerHTML = '<span class="psr-num">' + nextDiff + '</span> 天'; }
         else { labelEl.textContent = '已延期'; cdEl.innerHTML = '<span class="psr-num">' + Math.abs(nextDiff) + '</span> 天'; }
       } else {
-        phase = '黄体期'; phaseColor = '#FF9500';
+        phase = '黄体期'; phaseColor = '#3b82f6';
         if (nextDiff > 0) { labelEl.textContent = '距下次姨妈'; cdEl.innerHTML = '<span class="psr-num">' + nextDiff + '</span> 天'; }
         else if (nextDiff === 0) { labelEl.textContent = '姨妈今天预计开始'; cdEl.innerHTML = '<span class="psr-num">今天</span>'; }
         else { labelEl.textContent = '已延期'; cdEl.innerHTML = '<span class="psr-num">' + Math.abs(nextDiff) + '</span> 天'; }
@@ -2242,34 +2210,36 @@
     }
 
     // 动态生成圆盘扇区
-    function renderWheelSectors(p, cycleDay) {
+    function renderWheelSectors(p) {
       var sectorsEl = document.getElementById('wheelSectors');
-      var dotsEl = document.getElementById('wheelProgressDots');
-      var markerEl = document.getElementById('wheelDayMarker');
-      var labelsEl = document.getElementById('wheelLabels');
+      var marksEl = document.getElementById('wheelDayMarks');
+      var defsEl = document.getElementById('wheelDefs');
       if (!sectorsEl) return;
-      var cx = 160, cy = 160, r = 138, innerR = 66;
+      var cx = 160, cy = 160, r = 138, innerR = 70;
       var cycle = p.cycle;
       var periodDays = p.days;
       var ovulationDay = Math.round(cycle / 2);
-      var ovuStart = Math.max(ovulationDay - 2, periodDays + 1);
-      var ovuEnd = Math.min(ovulationDay + 2, cycle);
-      var gap = 1.5;
+      var ovuStart = Math.max(ovulationDay - 5, periodDays + 1); // 易孕期：排卵日前5天起
+      var ovuEnd = Math.min(ovulationDay + 4, cycle); // 排卵日后4天止
+      var gap = 1.2; // 扇区间隙角度
 
-      // 美柚配色：月经期(淡粉), 卵泡期(淡蓝), 排卵期(淡紫), 黄体期(橙色)
+      // 各阶段天数
       var phases = [
-        { name: '月经期', startDay: 1, endDay: periodDays, color: '#FF93A8', light: '#FFD1DC' },
-        { name: '卵泡期', startDay: periodDays + 1, endDay: ovuStart - 1, color: '#60A5FA', light: '#BFDBFE' },
-        { name: '排卵期', startDay: ovuStart, endDay: ovuEnd, color: '#A78BFA', light: '#DDD6FE' },
-        { name: '黄体期', startDay: ovuEnd + 1, endDay: cycle, color: '#FF9500', light: '#FFD89E' }
+        { name: '月经期', startDay: 1, endDay: periodDays, color: '#ec4899', light: '#f9a8d4' },
+        { name: '卵泡期', startDay: periodDays + 1, endDay: ovuStart - 1, color: '#10b981', light: '#6ee7b7' },
+        { name: '排卵期', startDay: ovuStart, endDay: ovuEnd, color: '#f59e0b', light: '#fcd34d' },
+        { name: '黄体期', startDay: ovuEnd + 1, endDay: cycle, color: '#3b82f6', light: '#93c5fd' }
       ];
 
-      // 找到当前阶段
-      var currentPhase = null;
-      phases.forEach(function(ph) {
-        if (cycleDay >= ph.startDay && cycleDay <= ph.endDay) currentPhase = ph;
+      // 生成渐变定义
+      var defsHtml = '';
+      phases.forEach(function(ph, idx) {
+        defsHtml += '<linearGradient id="grad' + idx + '" x1="0%" y1="0%" x2="100%" y2="100%">';
+        defsHtml += '<stop offset="0%" stop-color="' + ph.light + '" stop-opacity="0.85"/>';
+        defsHtml += '<stop offset="100%" stop-color="' + ph.color + '" stop-opacity="0.9"/>';
+        defsHtml += '</linearGradient>';
       });
-      if (!currentPhase) currentPhase = phases[0];
+      if (defsEl) defsEl.innerHTML = defsHtml;
 
       // 生成扇区
       var html = '';
@@ -2278,77 +2248,32 @@
         var startAngle = ((ph.startDay - 1) / cycle) * 360 - 90 + gap / 2;
         var endAngle = (ph.endDay / cycle) * 360 - 90 - gap / 2;
         if (endAngle <= startAngle) endAngle = startAngle + 0.5;
-        var isActive = (ph.name === currentPhase.name);
-        var fill = isActive ? ph.color : ph.light;
-        var opacity = isActive ? '0.92' : '0.6';
         var path = arcPath(cx, cy, r, innerR, startAngle, endAngle);
-        html += '<path d="' + path + '" fill="' + fill + '" fill-opacity="' + opacity + '" stroke="white" stroke-width="2" stroke-linejoin="round"/>';
+        html += '<path d="' + path + '" fill="url(#grad' + idx + ')" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>';
       });
       if (sectorsEl) sectorsEl.innerHTML = html;
 
-      // 在当前阶段扇区内生成白点进度
-      var dotsHtml = '';
-      if (currentPhase && dotsEl) {
-        var ph = currentPhase;
-        var phDays = ph.endDay - ph.startDay + 1;
-        var dotCount = Math.min(phDays, 14);
-        var midR = (r + innerR) / 2;
-        for (var i = 0; i < dotCount; i++) {
-          var dayInPhase = i + 1;
-          var progress = dayInPhase / (dotCount + 1);
-          var startAngle = ((ph.startDay - 1) / cycle) * 360 - 90 + gap / 2;
-          var endAngle = (ph.endDay / cycle) * 360 - 90 - gap / 2;
-          var a = startAngle + (endAngle - startAngle) * progress;
-          var rad = a * Math.PI / 180;
-          var dx = cx + midR * Math.cos(rad);
-          var dy = cy + midR * Math.sin(rad);
-          var actualDay = ph.startDay + i;
-          var isPast = actualDay < cycleDay;
-          var isToday = actualDay === cycleDay;
-          if (isToday) {
-            // 今日：白色圆环 + 实心点
-            dotsHtml += '<circle cx="' + dx + '" cy="' + dy + '" r="6" fill="white" stroke="' + ph.color + '" stroke-width="2.5"/>';
-            dotsHtml += '<circle cx="' + dx + '" cy="' + dy + '" r="3" fill="' + ph.color + '"/>';
-          } else if (isPast) {
-            dotsHtml += '<circle cx="' + dx + '" cy="' + dy + '" r="3.5" fill="white" fill-opacity="0.9"/>';
-          } else {
-            dotsHtml += '<circle cx="' + dx + '" cy="' + dy + '" r="3" fill="white" fill-opacity="0.4"/>';
-          }
+      // 生成日标记（小圆点）
+      var marksHtml = '';
+      for (var d = 1; d <= cycle; d++) {
+        var a = ((d - 1) / cycle) * 360 - 90;
+        var rad = a * Math.PI / 180;
+        var mr = r + 10;
+        var mx = cx + mr * Math.cos(rad);
+        var my = cy + mr * Math.sin(rad);
+        var isSpecial = (d === 1 || d === ovulationDay || d === cycle);
+        var dotR = isSpecial ? 4.5 : 2.2;
+        var dotFill = isSpecial ? '#ec4899' : 'rgba(156,163,175,0.4)';
+        marksHtml += '<circle cx="' + mx + '" cy="' + my + '" r="' + dotR + '" fill="' + dotFill + '"/>';
+        if (isSpecial) {
+          var labelR = r + 20;
+          var lx = cx + labelR * Math.cos(rad);
+          var ly = cy + labelR * Math.sin(rad);
+          var label = d === 1 ? 'D1' : (d === ovulationDay ? '排卵' : 'D' + d);
+          marksHtml += '<text x="' + lx + '" y="' + ly + '" text-anchor="middle" alignment-baseline="middle" font-size="13" fill="#6b7280" font-weight="700">' + label + '</text>';
         }
       }
-      if (dotsEl) dotsEl.innerHTML = dotsHtml;
-
-      // 当前日位置标记（外圈突出标记）
-      var markerHtml = '';
-      if (markerEl) {
-        var dayAngle = ((cycleDay - 1) / cycle) * 360 - 90;
-        var dayRad = dayAngle * Math.PI / 180;
-        var markerR = r + 3;
-        var mx = cx + markerR * Math.cos(dayRad);
-        var my = cy + markerR * Math.sin(dayRad);
-        markerHtml += '<circle cx="' + mx + '" cy="' + my + '" r="7" fill="white" stroke="' + currentPhase.color + '" stroke-width="3"/>';
-        markerHtml += '<circle cx="' + mx + '" cy="' + my + '" r="3.5" fill="' + currentPhase.color + '"/>';
-      }
-      if (markerEl) markerEl.innerHTML = markerHtml;
-
-      // 阶段标签（外侧）
-      var labelsHtml = '';
-      if (labelsEl) {
-        phases.forEach(function(ph) {
-          if (ph.endDay < ph.startDay) return;
-          var midDay = (ph.startDay + ph.endDay) / 2;
-          var midAngle = ((midDay - 1) / cycle) * 360 - 90;
-          var midRad = midAngle * Math.PI / 180;
-          var labelR = r + 18;
-          var lx = cx + labelR * Math.cos(midRad);
-          var ly = cy + labelR * Math.sin(midRad);
-          var isActive = (ph.name === currentPhase.name);
-          var textColor = isActive ? ph.color : '#9ca3af';
-          var fontWeight = isActive ? '700' : '500';
-          labelsHtml += '<text x="' + lx + '" y="' + ly + '" text-anchor="middle" alignment-baseline="middle" font-size="13" fill="' + textColor + '" font-weight="' + fontWeight + '">' + ph.name + '</text>';
-        });
-      }
-      if (labelsEl) labelsEl.innerHTML = labelsHtml;
+      if (marksEl) marksEl.innerHTML = marksHtml;
 
       // 更新图例天数
       var legendEl = document.getElementById('wheelLegend');
@@ -2356,7 +2281,7 @@
         var legendHtml = phases.map(function(ph) {
           var dayCount = ph.endDay - ph.startDay + 1;
           if (dayCount <= 0) dayCount = 1;
-          return '<div class="pw-legend-item"><span class="pw-dot" style="background:' + ph.color + '"></span><span>' + ph.name + ' ' + dayCount + '天</span></div>';
+          return '<div class="pw-legend-item"><span class="pw-dot" style="background:' + ph.color + ';color:' + ph.color + '"></span><span>' + ph.name + ' ' + dayCount + '天</span></div>';
         }).join('');
         legendEl.innerHTML = legendHtml;
       }
@@ -3719,10 +3644,9 @@
       if (favSents.indexOf(idx) === -1) {
         favSents.push(idx);
         save('fc_fav_sents', favSents);
-        showToast('已收藏');
+        showToast('已收藏，移到收藏夹');
         updateFlashBadges();
         renderSentences();
-        if (flashTab === 'favorites' && flashSubTab === 'favSentences') renderSentenceFavList();
       }
     }
 
@@ -3733,7 +3657,6 @@
         showToast('已加入错题本');
         updateFlashBadges();
         renderSentences();
-        if (flashTab === 'errors' && flashSubTab === 'errSentences') renderErrSentList();
       }
     }
 
@@ -3896,7 +3819,6 @@
       }
       updateFlashBadges();
       renderSideWord();
-      if (flashTab === 'favorites' && flashSubTab === 'favWords') renderWordFavList();
     }
 
     function speakSideWord() {
@@ -3912,38 +3834,16 @@
     }
 
     // ===== Flashcard System =====
-    var flashSubTab = 'favSentences';
     function setFlashTab(tab) {
       flashTab = tab;
       document.querySelectorAll('.flash-tab').forEach(function(t) { t.classList.toggle('active', t.dataset.tab === tab); });
       document.getElementById('flashStudy').style.display = tab === 'study' ? 'block' : 'none';
+      document.getElementById('flashReview').style.display = tab === 'review' ? 'block' : 'none';
       document.getElementById('flashFavorites').style.display = tab === 'favorites' ? 'block' : 'none';
       document.getElementById('flashErrors').style.display = tab === 'errors' ? 'block' : 'none';
-      document.getElementById('flashReview').style.display = tab === 'review' ? 'block' : 'none';
-      if (tab === 'favorites') { setFlashSubTab(flashSubTab === 'errSentences' || flashSubTab === 'errWords' ? 'favSentences' : flashSubTab); }
-      if (tab === 'errors') { setFlashSubTab(flashSubTab === 'favSentences' || flashSubTab === 'favWords' ? 'errSentences' : flashSubTab); }
       if (tab === 'review') renderReviewGrid();
-    }
-
-    function setFlashSubTab(sub) {
-      flashSubTab = sub;
-      document.querySelectorAll('.sub-tab').forEach(function(t) { t.classList.toggle('active', t.dataset.subtab === sub); });
-      var isFavSent = sub === 'favSentences';
-      var isFavWord = sub === 'favWords';
-      var isErrSent = sub === 'errSentences';
-      var isErrWord = sub === 'errWords';
-      var favSP = document.getElementById('favSentencesPanel');
-      var favWP = document.getElementById('favWordsPanel');
-      var errSP = document.getElementById('errSentencesPanel');
-      var errWP = document.getElementById('errWordsPanel');
-      if (favSP) favSP.style.display = isFavSent ? 'block' : 'none';
-      if (favWP) favWP.style.display = isFavWord ? 'block' : 'none';
-      if (errSP) errSP.style.display = isErrSent ? 'block' : 'none';
-      if (errWP) errWP.style.display = isErrWord ? 'block' : 'none';
-      if (isFavSent) renderSentenceFavList();
-      if (isFavWord) renderWordFavList();
-      if (isErrSent) renderErrSentList();
-      if (isErrWord) renderErrWordList();
+      if (tab === 'favorites') { favPage = 1; renderFavGrid(); }
+      if (tab === 'errors') renderErrGrid();
     }
 
     function renderFlashcard() {
@@ -3968,7 +3868,6 @@
         errorWords.push({ word: w.word, phonetic: w.phonetic, meaning: w.meaning });
         save('fc_err', errorWords);
         updateFlashBadges();
-        if (flashTab === 'errors' && flashSubTab === 'errWords') renderErrWordList();
       }
       showToast('已加入错题本');
       nextFlashcard();
@@ -3988,7 +3887,6 @@
       }
       updateFlashBadges();
       renderFlashcard();
-      if (flashTab === 'favorites' && flashSubTab === 'favWords') renderWordFavList();
     }
 
     function nextFlashcard() {
@@ -4009,135 +3907,128 @@
       playNaturalTTS(word, function() { if (btn) stopSpeakAnim(btn); }, function() { if (btn) stopSpeakAnim(btn); });
     }
 
-    function renderSentenceFavList() {
-      var c = document.getElementById('sentenceFavList');
-      if (!c) return;
-      if (favSents.length === 0) {
-        c.innerHTML = '<div class="empty"><img src="icon-sheep.jpg" style="width:48px;height:48px;border-radius:50%;opacity:0.4;object-fit:cover;margin-bottom:0.75rem"><p>还没有收藏的句子<br>在学习中点击 ☆ 收藏句子</p></div>';
+    function renderFavGrid() {
+      var c = document.getElementById('favList');
+      var pagC = document.getElementById('favPagination');
+      if (favWords.length === 0 && favSents.length === 0) {
+        c.innerHTML = '<div class="empty"><img src="icon-sheep.jpg" style="width:48px;height:48px;border-radius:50%;opacity:0.4;object-fit:cover;margin-bottom:0.75rem"><p>还没有收藏的内容，学习中点击收藏吧</p></div>';
+        pagC.innerHTML = '';
         return;
       }
       var html = '';
-      favSents.forEach(function(idx, i) {
-        var s = getSent(idx);
-        if (!s) return;
-        html += '<div class="sentence-item">'
-          + '<div class="sentence-num">' + (i + 1) + '</div>'
-          + '<div class="sentence-body">'
-          + '<div class="sentence-en">' + esc(s.en) + '</div>'
-          + '<div class="sentence-cn">' + esc(s.cn) + '</div>'
-          + '<div class="sentence-actions">'
-          + '<button class="s-btn speak-btn" onclick="speakSentence(' + idx + ', this)"><span class="speak-icon-wrap"><span class="speaker-emoji">🔊</span><span class="speaker-wave"></span><span class="speaker-wave"></span></span> 朗读</button>'
-          + '<button class="s-btn" onclick="removeFavSent(' + idx + ')" style="color:var(--danger)">✕ 移除</button>'
-          + '</div></div></div>';
-      });
+      var num;
+      // ===== 句子分组 =====
+      if (favSents.length > 0) {
+        html += '<div class="fav-group-title">📝 句子 <span class="group-count">' + favSents.length + '</span></div>';
+        num = 1;
+        favSents.forEach(function(idx) {
+          var s = getSent(idx);
+          if (!s) return;
+          html += '<div class="sentence-item">'
+            + '<div class="sentence-num">' + num++ + '</div>'
+            + '<div class="sentence-body">'
+            + '<div class="sentence-en">' + esc(s.en) + '</div>'
+            + '<div class="sentence-cn">' + esc(s.cn) + '</div>'
+            + '<div class="sentence-actions">'
+            + '<button class="s-btn speak-btn" onclick="speakSentence(' + idx + ', this)"><span class="speak-icon-wrap"><span class="speaker-emoji">🔊</span><span class="speaker-wave"></span><span class="speaker-wave"></span></span> 朗读</button>'
+            + '<button class="s-btn" onclick="removeFavSent(' + idx + ')" style="color:var(--danger)">✕ 移除</button>'
+            + '</div></div></div>';
+        });
+      }
+      // ===== 单词分组 =====
+      if (favWords.length > 0) {
+        html += '<div class="fav-group-title">🔤 单词 <span class="group-count">' + favWords.length + '</span></div>';
+        num = 1;
+        favWords.forEach(function(w, i) {
+          html += '<div class="sentence-item">'
+            + '<div class="sentence-num">' + num++ + '</div>'
+            + '<div class="sentence-body">'
+            + '<div class="sentence-en">' + w.word + ' <span style="font-size:0.85rem;color:#9333ea;font-weight:400">' + w.phonetic + '</span></div>'
+            + '<div class="sentence-cn">' + w.meaning + '</div>'
+            + '<div class="sentence-actions">'
+            + '<button class="s-btn speak-btn" onclick="speakWordObj(\'' + w.word + '\', this)"><span class="speak-icon-wrap"><span class="speaker-emoji">🔊</span><span class="speaker-wave"></span><span class="speaker-wave"></span></span> 朗读</button>'
+            + '<button class="s-btn" onclick="removeFav(' + i + ')" style="color:var(--danger)">✕ 移除</button>'
+            + '</div></div></div>';
+        });
+      }
       c.innerHTML = html;
+      pagC.innerHTML = '';
     }
 
-    function renderWordFavList() {
-      var c = document.getElementById('wordFavList');
-      if (!c) return;
-      if (favWords.length === 0) {
-        c.innerHTML = '<div class="empty"><img src="icon-sheep.jpg" style="width:48px;height:48px;border-radius:50%;opacity:0.4;object-fit:cover;margin-bottom:0.75rem"><p>还没有收藏的单词<br>点击侧栏单词卡片 ♡ 收藏</p></div>';
-        return;
-      }
-      var html = '';
-      favWords.forEach(function(w, i) {
-        html += '<div class="sentence-item">'
-          + '<div class="sentence-num">' + (i + 1) + '</div>'
-          + '<div class="sentence-body">'
-          + '<div class="sentence-en">' + w.word + ' <span style="font-size:0.85rem;color:#9333ea;font-weight:400">' + w.phonetic + '</span></div>'
-          + '<div class="sentence-cn">' + w.meaning + '</div>'
-          + '<div class="sentence-actions">'
-          + '<button class="s-btn speak-btn" onclick="speakWordObj(\'' + w.word + '\', this)"><span class="speak-icon-wrap"><span class="speaker-emoji">🔊</span><span class="speaker-wave"></span><span class="speaker-wave"></span></span> 朗读</button>'
-          + '<button class="s-btn" onclick="removeFav(' + i + ')" style="color:var(--danger)">✕ 移除</button>'
-          + '</div></div></div>';
-      });
-      c.innerHTML = html;
+    function goFavPage(p) {
+      var totalPages = Math.ceil((favWords.length + favSents.length) / FAV_PER_PAGE);
+      if (p < 1) p = 1;
+      if (p > totalPages) p = totalPages;
+      favPage = p;
+      renderFavGrid();
     }
 
     function renderFavWordsPage() {
-      if (flashTab === 'favorites') {
-        if (flashSubTab === 'favSentences') renderSentenceFavList();
-        if (flashSubTab === 'favWords') renderWordFavList();
-      }
-      if (flashTab === 'errors') {
-        if (flashSubTab === 'errSentences') renderErrSentList();
-        if (flashSubTab === 'errWords') renderErrWordList();
-      }
+      if (flashTab === 'favorites') renderFavGrid();
     }
 
-    function renderErrSentList() {
-      var c = document.getElementById('errSentList');
+    function renderErrGrid() {
+      var c = document.getElementById('errList');
       if (!c) return;
-      if (errSents.length === 0) {
-        c.innerHTML = '<div class="empty"><img src="icon-sheep.jpg" style="width:48px;height:48px;border-radius:50%;opacity:0.4;object-fit:cover;margin-bottom:0.75rem"><p>错题句子为空<br>在学习中点击 ⚠️ 标记错题</p></div>';
-        return;
+      if (errorWords.length === 0 && errSents.length === 0) { 
+        c.innerHTML = '<div class="empty"><img src="icon-sheep.jpg" style="width:48px;height:48px;border-radius:50%;opacity:0.4;object-fit:cover;margin-bottom:0.75rem"><p>错题本是空的，继续加油！</p></div>'; 
+        return; 
       }
       var html = '';
-      errSents.forEach(function(idx, i) {
-        var s = getSent(idx);
-        if (!s) return;
-        html += '<div class="sentence-item" style="border-left:3px solid var(--warning)">'
-          + '<div class="sentence-num">' + (i + 1) + '</div>'
-          + '<div class="sentence-body">'
-          + '<div class="sentence-en">' + esc(s.en) + '</div>'
-          + '<div class="sentence-cn">' + esc(s.cn) + '</div>'
-          + '<div class="sentence-actions">'
-          + '<button class="s-btn speak-btn" onclick="speakSentence(' + idx + ', this)"><span class="speak-icon-wrap"><span class="speaker-emoji">🔊</span><span class="speaker-wave"></span><span class="speaker-wave"></span></span> 朗读</button>'
-          + '<button class="s-btn" onclick="markSentMastered(' + idx + ')" style="color:var(--success)">✓ 已掌握</button>'
-          + '</div></div></div>';
-      });
+      var num;
+      // ===== 句子分组 =====
+      if (errSents.length > 0) {
+        html += '<div class="fav-group-title">📝 句子 <span class="group-count">' + errSents.length + '</span></div>';
+        num = 1;
+        errSents.forEach(function(idx) {
+          var s = getSent(idx);
+          if (!s) return;
+          html += '<div class="sentence-item" style="border-left:3px solid var(--warning)">'
+            + '<div class="sentence-num">' + num++ + '</div>'
+            + '<div class="sentence-body">'
+            + '<div class="sentence-en">' + esc(s.en) + '</div>'
+            + '<div class="sentence-cn">' + esc(s.cn) + '</div>'
+            + '<div class="sentence-actions">'
+            + '<button class="s-btn speak-btn" onclick="speakSentence(' + idx + ', this)"><span class="speak-icon-wrap"><span class="speaker-emoji">🔊</span><span class="speaker-wave"></span><span class="speaker-wave"></span></span> 朗读</button>'
+            + '<button class="s-btn" onclick="markSentMastered(' + idx + ')" style="color:var(--success)">✓ 已掌握</button>'
+            + '</div></div></div>';
+        });
+      }
+      // ===== 单词分组 =====
+      if (errorWords.length > 0) {
+        html += '<div class="fav-group-title">🔤 单词 <span class="group-count">' + errorWords.length + '</span></div>';
+        num = 1;
+        errorWords.forEach(function(w) {
+          html += '<div class="sentence-item" style="border-left:3px solid var(--warning)">'
+            + '<div class="sentence-num">' + num++ + '</div>'
+            + '<div class="sentence-body">'
+            + '<div class="sentence-en">' + w.word + ' <span style="font-size:0.85rem;color:#9333ea;font-weight:400">' + w.phonetic + '</span></div>'
+            + '<div class="sentence-cn">' + w.meaning + '</div>'
+            + '<div class="sentence-actions">'
+            + '<button class="s-btn speak-btn" onclick="speakWordObj(\'' + w.word + '\', this)"><span class="speak-icon-wrap"><span class="speaker-emoji">🔊</span><span class="speaker-wave"></span><span class="speaker-wave"></span></span> 朗读</button>'
+            + '<button class="s-btn" onclick="markMastered(\'' + w.word + '\')" style="color:var(--success)">✓ 已掌握</button>'
+            + '</div></div></div>';
+        });
+      }
       c.innerHTML = html;
     }
 
-    function renderErrWordList() {
-      var c = document.getElementById('errWordList');
-      if (!c) return;
-      if (errorWords.length === 0) {
-        c.innerHTML = '<div class="empty"><img src="icon-sheep.jpg" style="width:48px;height:48px;border-radius:50%;opacity:0.4;object-fit:cover;margin-bottom:0.75rem"><p>错题单词为空<br>在单词卡片点击 ⚠️ 加入错题</p></div>';
-        return;
-      }
-      var html = '';
-      errorWords.forEach(function(w, i) {
-        html += '<div class="sentence-item" style="border-left:3px solid var(--warning)">'
-          + '<div class="sentence-num">' + (i + 1) + '</div>'
-          + '<div class="sentence-body">'
-          + '<div class="sentence-en">' + w.word + ' <span style="font-size:0.85rem;color:#9333ea;font-weight:400">' + w.phonetic + '</span></div>'
-          + '<div class="sentence-cn">' + w.meaning + '</div>'
-          + '<div class="sentence-actions">'
-          + '<button class="s-btn speak-btn" onclick="speakWordObj(\'' + w.word + '\', this)"><span class="speak-icon-wrap"><span class="speaker-emoji">🔊</span><span class="speaker-wave"></span><span class="speaker-wave"></span></span> 朗读</button>'
-          + '<button class="s-btn" onclick="markMastered(\'' + w.word + '\')" style="color:var(--success)">✓ 已掌握</button>'
-          + '</div></div></div>';
-      });
-      c.innerHTML = html;
-    }
-
-    function removeFav(idx) { favWords.splice(idx, 1); save('fc_fav', favWords); updateFlashBadges(); if (flashTab === 'favorites' && flashSubTab === 'favWords') renderWordFavList(); showToast('已移除'); }
-    function markMastered(word) {
+    function removeFav(idx) { favWords.splice(idx, 1); save('fc_fav', favWords); updateFlashBadges(); renderFavGrid(); showToast('已移除'); }
+    function markMastered(word) { 
       var idx = errorWords.findIndex(function(w) { return w.word === word; });
-      if (idx !== -1) {
-        errorWords.splice(idx, 1);
-        save('fc_err', errorWords);
-        updateFlashBadges();
-        if (flashTab === 'errors' && flashSubTab === 'errWords') renderErrWordList();
-        showToast('已掌握，从错题本移除');
+      if (idx !== -1) { 
+        errorWords.splice(idx, 1); 
+        save('fc_err', errorWords); 
+        updateFlashBadges(); 
+        renderErrGrid(); 
+        showToast('已掌握，从错题本移除'); 
       }
     }
-    function removeFavSent(idx) { var pos = favSents.indexOf(idx); if (pos !== -1) { favSents.splice(pos, 1); save('fc_fav_sents', favSents); updateFlashBadges(); if (flashTab === 'favorites' && flashSubTab === 'favSentences') renderSentenceFavList(); showToast('已移除'); } }
-    function markSentMastered(idx) { var pos = errSents.indexOf(idx); if (pos !== -1) { errSents.splice(pos, 1); save('fc_err_sents', errSents); updateFlashBadges(); if (flashTab === 'errors' && flashSubTab === 'errSentences') renderErrSentList(); showToast('已掌握，从错题本移除'); } }
+    function removeFavSent(idx) { var pos = favSents.indexOf(idx); if (pos !== -1) { favSents.splice(pos, 1); save('fc_fav_sents', favSents); updateFlashBadges(); renderFavGrid(); showToast('已移除'); } }
+    function markSentMastered(idx) { var pos = errSents.indexOf(idx); if (pos !== -1) { errSents.splice(pos, 1); save('fc_err_sents', errSents); updateFlashBadges(); renderErrGrid(); showToast('已掌握，从错题本移除'); } }
     function updateFlashBadges() {
-      var fb = document.getElementById('favBadge');
-      if (fb) fb.textContent = favWords.length + favSents.length;
-      var fsb = document.getElementById('favSentenceBadge');
-      if (fsb) fsb.textContent = favSents.length;
-      var fwb = document.getElementById('favWordBadge');
-      if (fwb) fwb.textContent = favWords.length;
-      var eb = document.getElementById('errBadge');
-      if (eb) eb.textContent = errorWords.length + errSents.length;
-      var esb = document.getElementById('errSentenceBadge');
-      if (esb) esb.textContent = errSents.length;
-      var ewb = document.getElementById('errWordBadge');
-      if (ewb) ewb.textContent = errorWords.length;
+      document.getElementById('favBadge').textContent = favWords.length + favSents.length;
+      document.getElementById('errBadge').textContent = errorWords.length + errSents.length;
       var rb = document.getElementById('reviewBadge');
       if (rb) rb.textContent = masteredSents.length;
     }
