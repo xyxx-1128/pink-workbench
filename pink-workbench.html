@@ -1583,32 +1583,32 @@
           <span class="stock-ocr-tip" id="stockOcrTip">上传持仓截图自动识别</span>
           <button class="btn btn-ghost" onclick="showOcrGuide()" style="font-size:0.65rem;padding:0.2rem 0.5rem;margin-left:auto">❓使用指南</button>
         </div>
-        <div id="stockOcrGuide" class="modal-overlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
-          <div class="modal-card" style="max-width:440px;max-height:90vh;overflow-y:auto">
+        <div id="stockOcrGuide" class="modal-overlay" style="display:none;backdrop-filter:none;background:rgba(74,31,46,0.55)" onclick="if(event.target===this)this.style.display='none'">
+          <div class="modal-card" style="max-width:440px;max-height:90vh;overflow-y:auto;background:#fff">
             <div class="modal-header">
-              <h3 style="font-size:1rem">📷 截图识仓使用指南</h3>
+              <h3 style="font-size:1.1rem">📷 截图识仓使用指南</h3>
               <button class="modal-close" onclick="document.getElementById('stockOcrGuide').style.display='none'">✕</button>
             </div>
             <div style="padding:1.2rem 1rem">
-              <div style="margin-bottom:0.8rem;padding:0.8rem;background:rgba(34,197,94,0.1);border-radius:10px;border-left:4px solid #16a34a">
-                <div style="font-weight:700;color:#16a34a;font-size:0.9rem;margin-bottom:0.5rem">✅ 推荐截图类型</div>
-                <div style="color:#374151;font-size:0.82rem;line-height:1.8">
-                  <b style="color:#111">1. 持仓汇总页</b>：支付宝/蚂蚁财富/天天基金/养基宝的「持仓」页面，截取包含多只基金列表的整页截图<br>
+              <div style="margin-bottom:0.8rem;padding:0.9rem;background:rgba(34,197,94,0.08);border-radius:10px;border-left:4px solid #16a34a">
+                <div style="font-weight:700;color:#16a34a;font-size:1rem;margin-bottom:0.5rem">✅ 推荐截图类型</div>
+                <div style="color:#1f2937;font-size:0.92rem;line-height:1.9">
+                  <b style="color:#111">1. 持仓汇总页</b>：支付宝/蚂蚁财富/天天基金的「持仓」页面，截取包含多只基金列表的整页截图<br>
                   <b style="color:#111">2. 单只基金详情页</b>：基金详情页（需包含基金名称、6位代码、金额）<br>
                   <b style="color:#111">3. 券商持仓页</b>：炒股App的持仓页（需包含股票名称、代码、持有数量）
                 </div>
               </div>
-              <div style="margin-bottom:0.8rem;padding:0.8rem;background:rgba(239,68,68,0.1);border-radius:10px;border-left:4px solid #dc2626">
-                <div style="font-weight:700;color:#dc2626;font-size:0.9rem;margin-bottom:0.5rem">❌ 无法识别的情况</div>
-                <div style="color:#374151;font-size:0.82rem;line-height:1.8">
+              <div style="margin-bottom:0.8rem;padding:0.9rem;background:rgba(239,68,68,0.08);border-radius:10px;border-left:4px solid #dc2626">
+                <div style="font-weight:700;color:#dc2626;font-size:1rem;margin-bottom:0.5rem">❌ 无法识别的情况</div>
+                <div style="color:#1f2937;font-size:0.92rem;line-height:1.9">
                   • 截图模糊、文字过小<br>
                   • 截图不完整，关键信息被截断<br>
                   • 截图背景复杂、文字与背景颜色接近
                 </div>
               </div>
-              <div style="padding:0.8rem;background:rgba(59,130,246,0.1);border-radius:10px;border-left:4px solid #2563eb">
-                <div style="font-weight:700;color:#2563eb;font-size:0.9rem;margin-bottom:0.5rem">💡 提升识别率技巧</div>
-                <div style="color:#374151;font-size:0.82rem;line-height:1.8">
+              <div style="padding:0.9rem;background:rgba(59,130,246,0.08);border-radius:10px;border-left:4px solid #2563eb">
+                <div style="font-weight:700;color:#2563eb;font-size:1rem;margin-bottom:0.5rem">💡 提升识别率技巧</div>
+                <div style="color:#1f2937;font-size:0.92rem;line-height:1.9">
                   • 截图尽量清晰，文字部分占满屏幕<br>
                   • 使用原画质截图，避免压缩<br>
                   • 如识别失败，可手动输入持仓信息<br>
@@ -4426,28 +4426,16 @@
       reader.onload = function(e) {
         var img = new Image();
         img.onload = function() {
-          // 图片预处理：灰度化 + 对比度增强 + 放大
+          // 图片预处理：仅放大，保留原色（灰度化会降低中文识别率）
           var canvas = document.createElement('canvas');
-          var minW = 1200;
+          var minW = 1400;
           var scale = img.width < minW ? minW / img.width : 1;
-          var maxW = 2000;
+          var maxW = 2400;
           if (img.width * scale > maxW) scale = maxW / img.width;
           canvas.width = Math.round(img.width * scale);
           canvas.height = Math.round(img.height * scale);
           var ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          // 灰度化 + 对比度增强
-          var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          var d = imgData.data;
-          var contrast = 1.5; // 对比度因子
-          var intercept = 128 * (1 - contrast);
-          for (var i = 0; i < d.length; i += 4) {
-            var gray = 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
-            gray = gray * contrast + intercept;
-            gray = gray < 0 ? 0 : (gray > 255 ? 255 : gray);
-            d[i] = d[i+1] = d[i+2] = gray;
-          }
-          ctx.putImageData(imgData, 0, 0);
           var imageData = canvas.toDataURL('image/png');
           tipEl.textContent = '正在识别文字...';
           // 使用 Tesseract.js 识别
@@ -4489,106 +4477,117 @@
       var rawLines = text.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l; });
       var holdings = [];
 
-      // UI标签黑名单：这些词不是基金/股票名称
-      var uiBlacklist = /^(风险|中高风险|低风险|高风险|中风险|中低风险|详情|收益|持有|买入|卖出|定投|转换|讨论|诊基|资产|总盈亏|盈亏|昨日|持有收益率|累计|业绩|走势|跟踪|产品|陪伴|投资|指南|计划|记录|明细|蚂蚁|基金|场内|自选|行情|资讯|会员|账户|汇总|默认|设置|筛选|网格|图表|列表|当日|关联|板块|讨论区|收益率|买入价|卖出价|成本价|净值|单位净值|累计净值|现价|份额|持有量|持仓|股数|可用|可用量|冻结|资产详情|总资产|当日收益|持有收益|昨日收益|累计盈亏|业绩走势|跟踪指数|收益明细|交易记录|投资计划|投资指南|产品陪伴)$/;
+      // UI标签黑名单
+      var uiBlacklist = /^(风险|中高风险|低风险|高风险|中风险|中低风险|详情|收益|持有|买入|卖出|定投|转换|讨论|诊基|资产|总盈亏|盈亏|昨日|持有收益率|累计|业绩|走势|跟踪|产品|陪伴|投资|指南|计划|记录|明细|蚂蚁|基金|场内|自选|行情|资讯|会员|账户|汇总|默认|设置|筛选|网格|图表|列表|当日|关联|板块|讨论区|收益率|买入价|卖出价|成本价|净值|单位净值|累计净值|现价|份额|持有量|持仓|股数|可用|可用量|冻结|资产详情|总资产|当日收益|持有收益|昨日收益|累计盈亏|业绩走势|跟踪指数|收益明细|交易记录|投资计划|投资指南|产品陪伴|混债|软件服务|中证红利|上证科创50|沪深300指数|国证半导体芯片|纳斯达克100|股票型|债券型|混合型|指数型|联接基金|持有期限|持有时间)$/;
       // 基金公司名关键词
       var fundCompanies = /南方|华夏|易方达|鹏华|嘉实|泰信|永赢|兴业|广发|招商|博时|富国|汇添富|工银|建信|兴全|交银|银华|中欧|景顺|华安|国泰|华宝|长信|融通|诺安|万家|大成|华泰|长盛|国联安|摩根|前海|东方|平安|长城|华富|中银|中信|建投|财通|银河|浦银|安信|德邦|中加|国寿|太平|人保|泰康|民生|光大|上投|信达|国投|中信保诚/;
       // 基金类型关键词
-      var fundTypes = /指数|混合|ETF|联接|QDII|股票型|债券|成长|量化|主题|红利|消费|医疗|科技|新能源|半导体|芯片|科创|纳斯达克|锦绣|恒悦|发展|创新|矿业|周期|价值|蓝筹|创业|大盘|中证|国证|上证|深证|沪深|配置|灵活|稳健|策略|优选|精选|质量|趋势|动力|制造|军工|医药|环保|传媒|金融|地产|基建|有色|钢铁|煤炭|能源|化工|软件|通信|计算机|军工|材料|能源|环保|沪深300|中证500|中证1000|创业板|科创板|纳斯达克100|标普500|日经|德国|法国|英国|越南|印度|原油|黄金|白银|铜|商品|REIT|不动产/;
+      var fundTypes = /指数|混合|ETF|联接|QDII|股票型|债券|成长|量化|主题|红利|消费|医疗|科技|新能源|半导体|芯片|科创|纳斯达克|锦绣|恒悦|发展|创新|矿业|周期|价值|蓝筹|创业|大盘|中证|国证|上证|深证|沪深|配置|灵活|稳健|策略|优选|精选|质量|趋势|动力|制造|军工|医药|环保|传媒|金融|地产|基建|有色|钢铁|煤炭|能源|化工|软件|通信|计算机|材料|沪深300|中证500|中证1000|创业板|科创板|纳斯达克100|标普500|日经|德国|法国|英国|越南|印度|原油|黄金|白银|铜|商品|REIT|不动产/;
 
-      // 判断字符串是否是基金名称（而非UI标签）
       function isFundName(s) {
         if (!s || s.length < 3) return false;
         if (uiBlacklist.test(s)) return false;
         return fundCompanies.test(s) || fundTypes.test(s);
       }
 
-      // 从代码行向上搜索基金名称
-      function findNameAboveCode(codeLineIdx) {
-        for (var i = Math.max(0, codeLineIdx - 5); i <= codeLineIdx; i++) {
-          var line = rawLines[i];
-          // 提取中文开头的字符串（含英文/数字/括号）
-          var candidates = line.match(/[\u4e00-\u9fa5][\u4e00-\u9fa5A-Za-z0-9()（）·\u2010-\u2015]{2,40}/g) || [];
-          for (var j = 0; j < candidates.length; j++) {
-            if (isFundName(candidates[j])) return candidates[j].trim();
-          }
+      // 从一行中提取金额：排除百分比、6位代码、日期
+      function extractAmountFromLine(line) {
+        // 移除百分比数值（如 +0.10%, -0.02%）
+        var cleaned = line.replace(/[+-]?\d+\.?\d*\s*%/g, ' ');
+        // 移除日期（如 08-21）
+        cleaned = cleaned.replace(/\d{1,2}[-/]\d{1,2}/g, ' ');
+        // 移除6位代码
+        cleaned = cleaned.replace(/\d{6}/g, ' ');
+        // 找带¥/￥/元 的金额
+        var amtMatch = cleaned.match(/(?:¥|￥)\s*([\d,]+\.?\d*)/) || cleaned.match(/([\d,]+\.?\d*)\s*元/);
+        if (amtMatch) {
+          var val = parseFloat(amtMatch[1].replace(/,/g, ''));
+          if (val > 0 && val < 100000000) return val;
         }
-        // 回退：找代码行上方最长的非UI标签中文字符串
-        for (var i = Math.max(0, codeLineIdx - 3); i < codeLineIdx; i++) {
-          var ms = rawLines[i].match(/[\u4e00-\u9fa5A-Za-z0-9()（）·]{4,40}/g) || [];
-          for (var j = 0; j < ms.length; j++) {
-            if (!uiBlacklist.test(ms[j]) && /[\u4e00-\u9fa5]/.test(ms[j]) && ms[j].length >= 4) return ms[j];
-          }
+        // 找带逗号的数字（如 9,997.83）
+        var commaNum = cleaned.match(/([\d,]+\.\d{2})/);
+        if (commaNum) {
+          var val2 = parseFloat(commaNum[1].replace(/,/g, ''));
+          if (val2 > 0 && val2 < 100000000) return val2;
         }
-        return '';
-      }
-
-      // 从代码行附近搜索金额（排除代码本身）
-      function findAmountNearCode(codeLineIdx, code) {
-        var codeNum = parseFloat(code);
-        // 优先搜索带"元"的金额
-        for (var i = Math.max(0, codeLineIdx - 5); i <= Math.min(rawLines.length - 1, codeLineIdx + 10); i++) {
-          var line = rawLines[i];
-          // "366.36元" 或 "¥366.36"
-          var amtMatch = line.match(/(?:¥|￥)\s*([\d,]+\.?\d*)/) || line.match(/([\d,]+\.?\d*)\s*元/);
-          if (amtMatch) {
-            var val = parseFloat(amtMatch[1].replace(/,/g, ''));
-            if (val > 0 && val !== codeNum && val < 100000000) return val;
-          }
-          // 处理金额和"元"分两行的情况
-          if (/^[\d,]+\.\d+$/.test(line) && i + 1 < rawLines.length && rawLines[i + 1].indexOf('元') >= 0) {
-            var val2 = parseFloat(line.replace(/,/g, ''));
-            if (val2 > 0 && val2 !== codeNum) return val2;
-          }
-        }
-        // 搜索带小数点的金额（排除代码行和百分比行）
-        for (var i = Math.max(0, codeLineIdx - 5); i <= Math.min(rawLines.length - 1, codeLineIdx + 10); i++) {
-          var line = rawLines[i];
-          if (line.indexOf(code) >= 0) continue;
-          if (line.indexOf('%') >= 0) continue;
-          var numMatch = line.match(/([\d,]+\.\d{2})/);
-          if (numMatch) {
-            var val = parseFloat(numMatch[1].replace(/,/g, ''));
-            if (val > 0 && val !== codeNum && val < 100000000) return val;
-          }
+        // 找纯数字带小数
+        var decimalNum = cleaned.match(/(\d+\.\d{2})/);
+        if (decimalNum) {
+          var val3 = parseFloat(decimalNum[1]);
+          if (val3 > 0 && val3 < 100000000) return val3;
         }
         return 0;
       }
 
-      // 策略1：找到6位代码，向上搜索名称，附近搜索金额
-      var processedCodes = {};
+      function extractCode(line) {
+        var m = line.match(/(\d{6})/);
+        return m ? m[1] : '';
+      }
+
+      // 主策略：扫描所有行，找到基金名称，在同行或后续行找金额
       rawLines.forEach(function(line, lineIdx) {
-        var codeMatch = line.match(/(\d{6})/);
-        if (!codeMatch) return;
-        var code = codeMatch[1];
-        if (processedCodes[code]) return;
-        var name = findNameAboveCode(lineIdx);
-        if (!name) name = code;
-        var amount = findAmountNearCode(lineIdx, code);
-        if (amount === 0) return;
-        var type = guessCodeType(code);
-        holdings.push({ code: code, name: name, shares: amount, buyPrice: 0, type: type });
-        processedCodes[code] = true;
+        // 提取行中的中文名称候选
+        var nameCandidates = line.match(/[\u4e00-\u9fa5][\u4e00-\u9fa5A-Za-z0-9()（）·\u2010-\u2015]{2,40}/g) || [];
+        var fundName = '';
+        for (var j = 0; j < nameCandidates.length; j++) {
+          if (isFundName(nameCandidates[j])) {
+            fundName = nameCandidates[j].replace(/\.+$/, '').replace(/…+$/, '').trim();
+            break;
+          }
+        }
+        if (!fundName) return;
+
+        // 在同行找金额和代码
+        var amount = extractAmountFromLine(line);
+        var code = extractCode(line);
+
+        // 如果同行没找到金额，搜索后续3行
+        if (amount === 0) {
+          for (var k = 1; k <= 3; k++) {
+            if (lineIdx + k >= rawLines.length) break;
+            var nextLine = rawLines[lineIdx + k];
+            // 如果遇到另一个基金名称行，停止搜索
+            var nextNames = nextLine.match(/[\u4e00-\u9fa5][\u4e00-\u9fa5A-Za-z0-9()（）·]{2,40}/g) || [];
+            for (var m = 0; m < nextNames.length; m++) {
+              if (isFundName(nextNames[m])) { return; }
+            }
+            amount = extractAmountFromLine(nextLine);
+            if (!code) code = extractCode(nextLine);
+            if (amount > 0) break;
+          }
+        }
+
+        if (amount > 0) {
+          var exists = holdings.some(function(h) {
+            return (h.code && code && h.code === code) || h.name === fundName;
+          });
+          if (!exists) {
+            holdings.push({
+              code: code,
+              name: fundName,
+              shares: amount,
+              buyPrice: 0,
+              type: code ? guessCodeType(code) : 'fund'
+            });
+          }
+        }
       });
 
-      // 策略2：无代码时，匹配"基金名称+金额"模式
+      // 回退策略：纯代码+金额匹配
       if (holdings.length === 0) {
         rawLines.forEach(function(line, lineIdx) {
-          var nameMatch = line.match(/([\u4e00-\u9fa5][\u4e00-\u9fa5A-Za-z0-9()（）·]{2,40})/);
-          if (!nameMatch || !isFundName(nameMatch[1])) return;
-          var name = nameMatch[1].replace(/\.\.\.$/, '');
-          var amount = 0;
-          var amtMatch = line.match(/(?:¥|￥)\s*([\d,]+\.?\d*)/) || line.match(/([\d,]+\.?\d*)\s*元/);
-          if (!amtMatch && lineIdx + 1 < rawLines.length) {
-            amtMatch = rawLines[lineIdx + 1].match(/(?:¥|￥)\s*([\d,]+\.?\d*)/) || rawLines[lineIdx + 1].match(/([\d,]+\.?\d*)\s*元/);
+          var codeMatch = line.match(/(\d{6})/);
+          if (!codeMatch) return;
+          var code = codeMatch[1];
+          var amount = extractAmountFromLine(line);
+          if (amount === 0 && lineIdx + 1 < rawLines.length) {
+            amount = extractAmountFromLine(rawLines[lineIdx + 1]);
           }
-          if (!amtMatch) {
-            var numMatch = line.match(/([\d,]+\.\d{2})/);
-            if (numMatch) amtMatch = ['', numMatch[1]];
-          }
-          if (amtMatch) amount = parseFloat(amtMatch[1].replace(/,/g, ''));
-          if (name && amount > 0) {
-            holdings.push({ code: '', name: name, shares: amount, buyPrice: 0, type: 'fund' });
+          if (amount > 0) {
+            var exists = holdings.some(function(h) { return h.code === code; });
+            if (!exists) {
+              holdings.push({ code: code, name: code, shares: amount, buyPrice: 0, type: guessCodeType(code) });
+            }
           }
         });
       }
@@ -4596,7 +4595,6 @@
       if (holdings.length === 0) {
         tipEl.innerHTML = '未识别到持仓信息，请上传持仓汇总页截图，或<a href="#" onclick="showOcrGuide();return false">查看指南</a>';
         previewEl.style.display = 'none';
-        // 显示原始识别文本供调试
         if (window._ocrRawText && window._ocrRawText.length > 5) {
           previewEl.innerHTML = '<div style="padding:0.6rem;background:rgba(239,68,68,0.05);border-radius:8px;border:1px solid rgba(239,68,68,0.2);font-size:0.7rem;color:var(--muted);max-height:120px;overflow:auto;white-space:pre-wrap">' + esc(window._ocrRawText.substring(0, 500)) + '</div>';
           previewEl.style.display = 'block';
@@ -4604,7 +4602,7 @@
         return;
       }
 
-      // 去重（按代码+名称）
+      // 去重
       var seen = {};
       holdings = holdings.filter(function(h) {
         var key = h.code || h.name;
