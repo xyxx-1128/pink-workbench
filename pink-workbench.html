@@ -1806,10 +1806,10 @@
     <div class="modal">
       <h2 id="modalTitle">添加任务</h2>
       <div class="fg"><label>任务名称</label><input type="text" id="fName" placeholder="输入任务名称..."></div>
-      <div class="fg"><label>所属模块</label><select id="fModule"><option value="work">💼 工作</option><option value="english">📚 英语学习</option><option value="media">🎬 自媒体创作</option><option value="period">🌸 经期管理</option></select></div>
+      <div class="fg"><label>所属模块</label><select id="fModule" onchange="toggleModule()"><option value="work">💼 工作</option><option value="english">📚 英语学习</option><option value="media">🎬 自媒体创作</option><option value="period">🌸 经期管理</option><option value="memo">📌 备忘录</option></select></div>
       <div class="fg"><label>任务日期</label><input type="date" id="fDate"></div>
-      <div class="fg-row"><div class="fg"><label>开始时间</label><input type="time" id="fStart" value="09:30"></div><div class="fg"><label>结束时间</label><input type="time" id="fEnd" value="19:00"></div></div>
-      <div class="fg-row-3">
+      <div class="fg-row" id="fTimeRow"><div class="fg"><label>开始时间</label><input type="time" id="fStart" value="09:30"></div><div class="fg"><label>结束时间</label><input type="time" id="fEnd" value="19:00"></div></div>
+      <div class="fg-row-3" id="fStatusRow">
         <div class="fg"><label>状态</label><select id="fStatus"><option value="todo">待完成</option><option value="done">已完成</option></select></div>
         <div class="fg"><label>重复类型</label><select id="fRepeat" onchange="toggleRepeat()"><option value="no">不重复</option><option value="multi">多天任务</option><option value="daily">每日重复</option></select></div>
         <div class="fg"><label>优先级</label><select id="fPriority"><option value="high">高</option><option value="medium">中</option><option value="low">低</option></select></div>
@@ -1880,6 +1880,7 @@
       english:{ label: '英语学习', icon: '📚', color: '#9333ea', bg: '#f3e8ff' },
       media:  { label: '自媒体', icon: '🎬', color: '#0ea5e9', bg: '#e0f2fe' },
       period: { label: '经期管理', icon: '🌸', color: '#ec4899', bg: '#fce7f3' },
+      memo:   { label: '备忘录', icon: '📌', color: '#f59e0b', bg: '#fef3c7' },
     };
 
     // ===== State =====
@@ -4979,6 +4980,7 @@
           document.getElementById('fRepeat').value = repeatType;
           document.getElementById('fRepeatDays').value = repeatDays;
           toggleRepeat();
+          toggleModule();
         }
       } else {
         var moduleMap = { work: 'work', english: 'english', media: 'media', diary: 'work' };
@@ -4992,9 +4994,33 @@
         document.getElementById('fRepeat').value = 'no';
         document.getElementById('fRepeatDays').value = 7;
         document.getElementById('fDesc').value = '';
-        toggleRepeat();
+          toggleRepeat();
+          toggleModule();
       }
       setTimeout(function(){ document.getElementById('fName').focus(); }, 100);
+    }
+    function toggleModule() {
+      var mod = document.getElementById('fModule').value;
+      var isMemo = mod === 'memo';
+      var timeRow = document.getElementById('fTimeRow');
+      var statusRow = document.getElementById('fStatusRow');
+      var repeatGroup = document.getElementById('repeatGroup');
+      if (isMemo) {
+        if (timeRow) timeRow.style.display = 'none';
+        if (repeatGroup) repeatGroup.style.display = 'none';
+        if (statusRow) {
+          var repeatFg = statusRow.children[1];
+          var priorityFg = statusRow.children[2];
+          if (repeatFg) repeatFg.style.display = 'none';
+          if (priorityFg) priorityFg.style.display = 'none';
+        }
+      } else {
+        if (timeRow) timeRow.style.display = '';
+        if (statusRow) {
+          for (var i = 0; i < statusRow.children.length; i++) statusRow.children[i].style.display = '';
+        }
+        toggleRepeat();
+      }
     }
     function toggleRepeat() {
       var v = document.getElementById('fRepeat').value;
@@ -5033,6 +5059,33 @@
         priority: document.getElementById('fPriority').value,
         desc: document.getElementById('fDesc').value.trim()
       };
+
+      if (baseTask.module === 'memo') {
+        var memos = getMemos();
+        var memoStatus = document.getElementById('fStatus').value;
+        var memoDate = baseTask.date;
+        var newMemoId = memos.length > 0 ? Math.max.apply(null, memos.map(function(m){ return m.id; })) + 1 : 1;
+        if (id) {
+          var memoIdx = memos.findIndex(function(m){ return String(m.id) === id; });
+          if (memoIdx !== -1) {
+            memos[memoIdx].text = name;
+            memos[memoIdx].status = memoStatus;
+            memos[memoIdx].date = memoDate;
+          } else {
+            var taskIdx = tasks.findIndex(function(x){ return x.id === parseInt(id); });
+            if (taskIdx !== -1) tasks.splice(taskIdx, 1);
+            memos.push({ id: newMemoId, text: name, status: memoStatus, date: memoDate });
+          }
+        } else {
+          memos.push({ id: newMemoId, text: name, status: memoStatus, date: memoDate });
+        }
+        save('memos', memos);
+        save('tasks', tasks);
+        closeModal();
+        if (currentView === 'home') { renderMemos(); renderOtherTasks(); }
+        showToast('备忘录已保存');
+        return;
+      }
 
       if (id) {
         var idx = tasks.findIndex(function(x){ return x.id === parseInt(id); });
