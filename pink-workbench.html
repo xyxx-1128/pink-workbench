@@ -1290,9 +1290,6 @@
       <a class="drawer-item" data-view="stock" onclick="switchView('stock')">
         <span class="di-icon">📈</span><span>股市分析</span>
       </a>
-      <a class="drawer-item" data-view="memo" onclick="switchView('memo')">
-        <span class="di-icon">📌</span><span>备忘录</span>
-      </a>
       <a class="drawer-item" data-view="quote" onclick="switchView('quote')">
         <span class="di-icon">💬</span><span>语录摘抄</span>
       </a>
@@ -1422,6 +1419,17 @@
               </div>
             </div>
             <div class="task-list" id="otherTaskList"></div>
+          </div>
+          <div class="task-panel" style="margin-top:1rem">
+            <div class="panel-header">
+              <h2><span class="ph-icon" style="background:#fef3c7">📌</span>备忘录</h2>
+              <button class="btn btn-primary" onclick="openMemoModal()" style="font-size:0.8rem;padding:0.4rem 0.8rem">+ 添加</button>
+            </div>
+            <div class="filter-pills" style="margin-bottom:0.6rem">
+              <span class="pill active" id="memoPillTodo" onclick="setMemoFilter('todo')">待完成</span>
+              <span class="pill" id="memoPillDone" onclick="setMemoFilter('done')">已完成</span>
+            </div>
+            <div class="memo-full-list" id="memoFullList"></div>
           </div>
         </div>
         <aside class="sidebar">
@@ -1630,21 +1638,6 @@
       </div>
     </div>
 
-    <!-- Memo View -->
-    <div class="view" id="viewMemo">
-      <div class="task-panel">
-        <div class="panel-header">
-          <h2><span class="ph-icon" style="background:#fef3c7">📌</span>备忘录</h2>
-          <button class="btn btn-primary" onclick="openMemoModal()" style="font-size:0.8rem;padding:0.4rem 0.8rem">+ 添加</button>
-        </div>
-        <div class="filter-pills" style="margin-bottom:1rem">
-          <span class="pill active" id="memoPillTodo" onclick="setMemoFilter('todo')">待完成</span>
-          <span class="pill" id="memoPillDone" onclick="setMemoFilter('done')">已完成</span>
-        </div>
-        <div class="memo-full-list" id="memoFullList"></div>
-      </div>
-    </div>
-
     <!-- Quote View -->
     <div class="view" id="viewQuote">
       <div class="task-panel">
@@ -1814,6 +1807,7 @@
       <h2 id="modalTitle">添加任务</h2>
       <div class="fg"><label>任务名称</label><input type="text" id="fName" placeholder="输入任务名称..."></div>
       <div class="fg"><label>所属模块</label><select id="fModule"><option value="work">💼 工作</option><option value="english">📚 英语学习</option><option value="media">🎬 自媒体创作</option><option value="period">🌸 经期管理</option></select></div>
+      <div class="fg"><label>任务日期</label><input type="date" id="fDate"></div>
       <div class="fg-row"><div class="fg"><label>开始时间</label><input type="time" id="fStart" value="09:30"></div><div class="fg"><label>结束时间</label><input type="time" id="fEnd" value="19:00"></div></div>
       <div class="fg-row-3">
         <div class="fg"><label>状态</label><select id="fStatus"><option value="todo">待完成</option><option value="done">已完成</option></select></div>
@@ -1849,7 +1843,7 @@
     <div class="modal">
       <h2>写生活记录</h2>
       <div class="fg"><label>标题</label><input type="text" id="dTitle" placeholder="今天的小标题..."></div>
-      <div class="fg"><label>内容 <button type="button" class="voice-btn" onclick="toggleVoiceInput('dContent', this)" title="语音输入">🎤</button><span class="voice-status" id="voiceStatus_dContent"></span></label><textarea id="dContent" placeholder="记录今天的点滴..." style="min-height:120px"></textarea></div>
+      <div class="fg"><div style="display:flex;align-items:center;gap:0.3rem;font-size:0.82rem;font-weight:600;color:var(--ink);margin-bottom:0.35rem"><span>内容</span><button type="button" class="voice-btn" onclick="toggleVoiceInput('dContent', this)" title="语音输入">🎤</button><span class="voice-status" id="voiceStatus_dContent"></span></div><textarea id="dContent" placeholder="记录今天的点滴..." style="min-height:120px"></textarea></div>
       <div class="fg"><label>心情</label><select id="dMood"><option value="😊">😊 开心</option><option value="😌">😌 平静</option><option value="😢">😢 难过</option><option value="😡">😡 生气</option><option value="😴">😴 疲惫</option><option value="🥰">🥰 幸福</option></select></div>
       <input type="hidden" id="dEditId">
       <div class="modal-footer"><button class="btn btn-ghost" onclick="closeDiaryModal()">取消</button><button class="btn btn-primary" onclick="saveDiary()">保存</button></div>
@@ -1860,7 +1854,7 @@
   <div class="modal-overlay" id="memoModal" onclick="closeMemoOutside(event)">
     <div class="modal">
       <h2 id="memoModalTitle">添加备忘录</h2>
-      <div class="fg"><label>内容 <button type="button" class="voice-btn" onclick="toggleVoiceInput('memoInput', this)" title="语音输入">🎤</button><span class="voice-status" id="voiceStatus_memoInput"></span></label><textarea id="memoInput" placeholder="输入备忘内容..." style="min-height:80px"></textarea></div>
+      <div class="fg"><div style="display:flex;align-items:center;gap:0.3rem;font-size:0.82rem;font-weight:600;color:var(--ink);margin-bottom:0.35rem"><span>内容</span><button type="button" class="voice-btn" onclick="toggleVoiceInput('memoInput', this)" title="语音输入">🎤</button><span class="voice-status" id="voiceStatus_memoInput"></span></div><textarea id="memoInput" placeholder="输入备忘内容..." style="min-height:80px"></textarea></div>
       <input type="hidden" id="memoEditId">
       <div class="modal-footer"><button class="btn btn-ghost" onclick="closeMemoModal()">取消</button><button class="btn btn-primary" onclick="saveMemo()">保存</button></div>
     </div>
@@ -1870,7 +1864,7 @@
   <div class="modal-overlay" id="quoteModal" onclick="closeQuoteOutside(event)">
     <div class="modal">
       <h2>添加语录摘抄</h2>
-      <div class="fg"><label>语录内容 <button type="button" class="voice-btn" onclick="toggleVoiceInput('quoteInput', this)" title="语音输入">🎤</button><span class="voice-status" id="voiceStatus_quoteInput"></span></label><textarea id="quoteInput" placeholder="输入语录内容..." style="min-height:80px"></textarea></div>
+      <div class="fg"><div style="display:flex;align-items:center;gap:0.3rem;font-size:0.82rem;font-weight:600;color:var(--ink);margin-bottom:0.35rem"><span>语录内容</span><button type="button" class="voice-btn" onclick="toggleVoiceInput('quoteInput', this)" title="语音输入">🎤</button><span class="voice-status" id="voiceStatus_quoteInput"></span></div><textarea id="quoteInput" placeholder="输入语录内容..." style="min-height:80px"></textarea></div>
       <input type="hidden" id="quoteEditId">
       <div class="modal-footer"><button class="btn btn-ghost" onclick="closeQuoteModal()">取消</button><button class="btn btn-primary" onclick="saveQuote()">保存</button></div>
     </div>
@@ -3014,8 +3008,7 @@
     // FAB按钮根据当前页面触发对应添加操作
     function fabAction() {
       var v = currentView;
-      if (v === 'memo') openMemoModal();
-      else if (v === 'quote') openQuoteModal();
+      if (v === 'quote') openQuoteModal();
       else if (v === 'diary') openDiaryModal();
       else openModal();
     }
@@ -3040,14 +3033,13 @@
       if (btnToday) btnToday.style.display = (view === 'home' || view === 'work') ? '' : 'none';
       // 控制"添加任务"按钮：语录和备忘录页隐藏（有独立的添加按钮）
       var btnAdd = document.getElementById('btnAddTask');
-      if (btnAdd) btnAdd.style.display = (view === 'quote' || view === 'memo' || view === 'diary' || view === 'wellness' || view === 'period' || view === 'stock') ? 'none' : '';
+      if (btnAdd) btnAdd.style.display = (view === 'quote' || view === 'diary' || view === 'wellness' || view === 'period' || view === 'stock') ? 'none' : '';
       if (window.innerWidth <= 768) closeDrawer();
       window.scrollTo(0, 0);
       if (view === 'home') renderHome();
       else if (view === 'work') render();
       else if (view === 'english') { renderSentences(); updateFlashBadges(); renderFavWordsPage(); if (flashTab === 'review') renderReviewGrid(); }
       else if (view === 'media') { renderMediaTasks(); fetchHotSearch(); }
-      else if (view === 'memo') renderMemoView();
       else if (view === 'quote') renderQuoteView();
       else if (view === 'period') renderPeriodView();
       else if (view === 'wellness') renderWellnessView();
@@ -3606,7 +3598,16 @@
         voiceTargetId = null;
         voiceBtn = null;
       };
-      voiceRecognition.start();
+      try {
+        voiceRecognition.start();
+      } catch(e) {
+        btn.classList.remove('recording');
+        if (statusEl) statusEl.textContent = '';
+        showToast('语音识别启动失败，请检查麦克风权限');
+        voiceRecognition = null;
+        voiceTargetId = null;
+        voiceBtn = null;
+      }
     }
 
     // 语音播放动画控制（带安全超时）
@@ -3734,6 +3735,7 @@
       renderStats();
       renderWorkTasks();
       renderOtherTasks();
+      renderMemos();
       renderProgressRing();
       renderPeriod();
       renderSideWord();
@@ -4935,7 +4937,6 @@
       else if (currentView === 'work') render();
       else if (currentView === 'english') { renderSentences(); updateFlashBadges(); renderFavWordsPage(); }
       else if (currentView === 'media') renderMediaTasks();
-      else if (currentView === 'memo') renderMemos();
       else if (currentView === 'quote') renderQuotes();
       else if (currentView === 'period') renderPeriod();
       else if (currentView === 'diary') renderDiaryView();
@@ -4964,6 +4965,7 @@
         if (t) {
           document.getElementById('fName').value = t.name;
           document.getElementById('fModule').value = t.module;
+          document.getElementById('fDate').value = t.date || currentDate || getDateStr(0);
           var parts = t.time.split(' - ');
           document.getElementById('fStart').value = parts[0] || '09:30';
           document.getElementById('fEnd').value = parts[1] || '19:00';
@@ -4982,6 +4984,7 @@
         var moduleMap = { work: 'work', english: 'english', media: 'media', diary: 'work' };
         document.getElementById('fName').value = '';
         document.getElementById('fModule').value = moduleMap[currentView] || 'work';
+        document.getElementById('fDate').value = currentDate || getDateStr(0);
         document.getElementById('fStart').value = '09:30';
         document.getElementById('fEnd').value = '19:00';
         document.getElementById('fStatus').value = 'todo';
@@ -5024,6 +5027,7 @@
       var baseTask = {
         name: name,
         module: document.getElementById('fModule').value,
+        date: document.getElementById('fDate').value || currentDate || getDateStr(0),
         time: document.getElementById('fStart').value + ' - ' + document.getElementById('fEnd').value,
         status: document.getElementById('fStatus').value,
         priority: document.getElementById('fPriority').value,
@@ -5035,6 +5039,7 @@
         if (idx !== -1) {
           tasks[idx].name = baseTask.name;
           tasks[idx].module = baseTask.module;
+          tasks[idx].date = baseTask.date;
           tasks[idx].time = baseTask.time;
           tasks[idx].status = baseTask.status;
           tasks[idx].priority = baseTask.priority;
@@ -5057,7 +5062,11 @@
       } else {
         if (repeatType === 'daily') {
           var newId = nextId(tasks);
+          var startDate = baseTask.date;
           for (var i = 0; i < repeatDays; i++) {
+            var d = new Date(startDate + 'T00:00:00');
+            d.setDate(d.getDate() + i);
+            var dateStr = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
             tasks.push({
               id: newId + i,
               name: baseTask.name,
@@ -5065,7 +5074,7 @@
               time: baseTask.time,
               status: 'todo',
               priority: baseTask.priority,
-              date: getDateStr(i),
+              date: dateStr,
               multi: 'no',
               totalDays: 1,
               doneDays: 0,
@@ -5083,7 +5092,7 @@
             time: baseTask.time,
             status: baseTask.status,
             priority: baseTask.priority,
-            date: currentDate || getDateStr(0),
+            date: baseTask.date,
             multi: 'yes',
             totalDays: repeatDays,
             doneDays: 0,
@@ -5099,7 +5108,7 @@
             time: baseTask.time,
             status: baseTask.status,
             priority: baseTask.priority,
-            date: currentDate || getDateStr(0),
+            date: baseTask.date,
             multi: 'no',
             totalDays: 1,
             doneDays: 0,
@@ -5223,7 +5232,7 @@
       }
       save('memos', memos);
       closeMemoModal();
-      if (currentView === 'memo') renderMemos();
+      if (currentView === 'home') renderMemos();
       showToast('备忘录已保存');
     }
     function toggleMemo(id) {
@@ -5232,7 +5241,7 @@
       if (m) {
         m.status = m.status === 'done' ? 'todo' : 'done';
         save('memos', memos);
-        if (currentView === 'memo') renderMemos();
+        if (currentView === 'home') renderMemos();
         showToast(m.status === 'done' ? '已完成 ✓' : '已恢复');
       }
     }
