@@ -348,7 +348,7 @@
     .task-card.done .t-title { text-decoration: line-through; color: var(--muted); }
     .task-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.6rem; }
     .t-left { display: flex; align-items: flex-start; gap: 0.6rem; flex: 1; min-width: 0; }
-    .t-check { width: 22px; height: 22px; border-radius: 7px; border: 2px solid var(--rule); background: var(--bg2); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 0.1rem; transition: all 0.2s; }
+    .t-check { width: 20px; height: 20px; border-radius: 6px; border: 2px solid var(--rule); background: var(--bg2); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; transition: all 0.2s; }
     .t-check:hover { border-color: var(--accent); }
     .t-check.checked { background: var(--success); border-color: var(--success); }
     .t-check.checked::after { content: '\2713'; color: #fff; font-size: 0.75rem; font-weight: 700; }
@@ -360,7 +360,7 @@
     .b-todo { background: rgba(242,201,76,0.15); color: #c69e1f; }
     .b-done { background: rgba(126,198,153,0.15); color: #4a9d6a; }
     .b-multi { background: rgba(192,132,252,0.12); color: #9333ea; }
-    .t-actions { display: flex; gap: 0.25rem; flex-shrink: 0; }
+    .t-actions { display: flex; gap: 0.25rem; flex-shrink: 0; margin-top: 2px; }
     .t-btn { width: 26px; height: 26px; border-radius: 7px; border: 1px solid var(--rule); background: var(--bg2); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; color: var(--muted); transition: all 0.2s; }
     .t-btn:hover { border-color: var(--accent); color: var(--accent); }
     .t-btn.del:hover { border-color: var(--danger); color: var(--danger); }
@@ -960,6 +960,54 @@
     .fg-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
     .fg-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.6rem; }
     .modal-footer { display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 1.25rem; }
+
+    /* === Mini Calendar === */
+    .mini-cal { background: var(--bg); border-radius: 14px; border: 1px solid var(--rule); padding: 0.8rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+
+    /* === Copy/Paste Support === */
+    input, textarea { -webkit-user-select: text !important; user-select: text !important; -webkit-touch-callout: default !important; }
+    .t-title, .t-meta, .diary-entry-content, .diary-entry-title, .wgi-word, .wgi-meaning, .sentence-body, .fc-card-text { user-select: text; -webkit-user-select: text; }
+
+    .mini-cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--rule); }
+    .mini-cal-header button { background: var(--bg2); border: 1px solid var(--rule); width: 28px; height: 28px; border-radius: 8px; font-size: 1rem; color: var(--ink); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+    .mini-cal-header button:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+    .mini-cal-header span { font-size: 0.85rem; font-weight: 700; color: var(--ink); }
+    .mini-cal-weekdays { display: grid; grid-template-columns: repeat(7,1fr); gap: 3px; margin-bottom: 4px; }
+    .mini-cal-weekdays span { text-align: center; font-size: 0.65rem; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; }
+    .mini-cal-days { display: grid; grid-template-columns: repeat(7,1fr); gap: 3px; }
+    .mini-cal-day { text-align: center; padding: 0.4rem 0; font-size: 0.78rem; border-radius: 8px; cursor: pointer; transition: all 0.15s; color: var(--ink); user-select: none; position: relative; }
+    .mini-cal-day:hover { background: var(--accent-soft); transform: scale(1.08); }
+    .mini-cal-day.other-month { color: var(--muted); opacity: 0.3; }
+    .mini-cal-day.selected { background: var(--accent); color: #fff; font-weight: 700; box-shadow: 0 2px 6px rgba(230,121,140,0.35); }
+    .mini-cal-day.today:not(.selected) { border: 1.5px solid var(--accent); color: var(--accent); font-weight: 700; }
+    .mini-cal-day.in-range { background: var(--accent-soft); color: var(--accent); }
+    .mini-cal-day.in-range.selected { background: var(--accent); color: #fff; }
+    .mini-cal-day.empty { cursor: default; }
+    .mini-cal-day.empty:hover { background: none; transform: none; }
+    .mini-cal-info { font-size: 0.72rem; color: var(--muted); margin-top: 0.5rem; text-align: center; padding: 0.3rem 0; background: var(--bg2); border-radius: 8px; }
+    .mini-cal-actions { display: flex; gap: 0.35rem; margin-top: 0.5rem; justify-content: center; }
+    .mini-cal-actions button { font-size: 0.7rem; padding: 0.25rem 0.65rem; border: 1px solid var(--rule); border-radius: 8px; background: var(--bg2); color: var(--ink); cursor: pointer; transition: all 0.15s; font-weight: 500; }
+    .mini-cal-actions button:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    /* === Time Select === */
+    .time-range-wrap { display: flex; align-items: stretch; gap: 0; background: var(--bg); border-radius: 13px; border: 1px solid var(--rule); overflow: hidden; transition: border-color 0.15s, box-shadow 0.15s; }
+    .time-range-wrap:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(230,121,140,0.1); }
+    .time-block { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 0.45rem 0.3rem 0.35rem; }
+    .time-block-label { font-size: 0.62rem; font-weight: 600; color: var(--muted); margin-bottom: 0.15rem; letter-spacing: 0.5px; }
+    .time-block-inputs { display: flex; align-items: center; gap: 1px; }
+    .time-block-inputs select { width: auto !important; border: none !important; background: transparent !important; font-family: var(--font) !important; font-size: 1.15rem !important; font-weight: 800 !important; color: var(--ink) !important; outline: none !important; text-align: center; appearance: none; -webkit-appearance: none; cursor: pointer; padding: 0.15rem 0.3rem !important; border-radius: 6px !important; transition: background 0.12s; box-shadow: none !important; }
+    .time-block-inputs select:hover { background: var(--accent-soft); }
+    .time-block-inputs select:focus { background: var(--accent-soft); color: var(--accent); }
+    .time-block-inputs .colon { font-size: 1.15rem; font-weight: 800; color: var(--accent); padding: 0 1px; }
+    .time-arrow { display: flex; align-items: center; justify-content: center; padding: 0 0.5rem; background: var(--accent-soft); color: var(--accent); font-size: 1.1rem; font-weight: 700; }
+    /* Cross-day preview */
+    .cross-day-preview { margin-top: 0.5rem; max-height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.2rem; }
+    .cdp-item { display: flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.6rem; border-radius: 8px; background: var(--bg); border: 1px solid var(--rule); font-size: 0.75rem; color: var(--ink); animation: fadeIn 0.2s ease; }
+    .cdp-item .cdp-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+    .cdp-item .cdp-date { font-weight: 600; min-width: 70px; }
+    .cdp-item .cdp-time { color: var(--muted); font-weight: 500; }
+    .cdp-item.cdp-today { border-color: var(--accent); background: var(--accent-soft); }
+    .cdp-item.cdp-today .cdp-dot { background: var(--accent); }
 
     /* === Toast === */
     .toast-wrap { position: fixed; top: 1.25rem; right: 1.25rem; z-index: 2000; display: flex; flex-direction: column; gap: 0.5rem; }
@@ -1809,8 +1857,42 @@
       <h2 id="modalTitle">添加任务</h2>
       <div class="fg"><label>任务名称</label><input type="text" id="fName" placeholder="输入任务名称..."></div>
       <div class="fg"><label>所属模块</label><select id="fModule" onchange="toggleModule()"><option value="work">💼 工作</option><option value="english">📚 英语学习</option><option value="media">🎬 自媒体创作</option><option value="period">🌸 经期管理</option><option value="memo">📌 备忘录</option></select></div>
-      <div class="fg"><label>任务日期</label><input type="date" id="fDate"></div>
-      <div class="fg-row" id="fTimeRow"><div class="fg"><label>开始时间</label><input type="time" id="fStart" value="09:30"></div><div class="fg"><label>结束时间</label><input type="time" id="fEnd" value="19:00"></div></div>
+      <div class="fg" id="fDateGroup"><label>任务日期 <span style="font-size:0.7rem;font-weight:400;color:var(--muted)">点击日期可多选（跨天）</span></label>
+        <div class="mini-cal">
+          <div class="mini-cal-header"><button type="button" onclick="calNav(-1)">‹</button><span id="calMonthLabel"></span><button type="button" onclick="calNav(1)">›</button></div>
+          <div class="mini-cal-weekdays"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>
+          <div class="mini-cal-days" id="calDays"></div>
+          <div class="mini-cal-info" id="calInfo">已选 1 天</div>
+          <div class="mini-cal-actions">
+            <button type="button" onclick="calToday()">今天</button>
+            <button type="button" onclick="calWeekdays()">本周工作日</button>
+            <button type="button" onclick="calClear()">清除</button>
+          </div>
+        </div>
+      </div>
+      <div class="fg" id="fTimeRow">
+        <label>时间段 <span style="font-size:0.7rem;font-weight:400;color:var(--muted)">所选时间将同步到每个日期</span></label>
+        <div class="time-range-wrap">
+          <div class="time-block">
+            <div class="time-block-label">开始</div>
+            <div class="time-block-inputs">
+              <select id="fStartH" onchange="updateCrossDayPreview()"></select>
+              <span class="colon">:</span>
+              <select id="fStartM" onchange="updateCrossDayPreview()"></select>
+            </div>
+          </div>
+          <div class="time-arrow">→</div>
+          <div class="time-block">
+            <div class="time-block-label">结束</div>
+            <div class="time-block-inputs">
+              <select id="fEndH" onchange="updateCrossDayPreview()"></select>
+              <span class="colon">:</span>
+              <select id="fEndM" onchange="updateCrossDayPreview()"></select>
+            </div>
+          </div>
+        </div>
+        <div class="cross-day-preview" id="crossDayPreview"></div>
+      </div>
       <div class="fg-row-3" id="fStatusRow">
         <div class="fg"><label>状态</label><select id="fStatus"><option value="todo">待完成</option><option value="done">已完成</option></select></div>
         <div class="fg"><label>重复类型</label><select id="fRepeat" onchange="toggleRepeat()"><option value="no">不重复</option><option value="multi">多天任务</option><option value="daily">每日重复</option></select></div>
@@ -3201,7 +3283,11 @@
         html += '<div class="t-meta"><span class="t-time">🕐 ' + t.time + '</span>';
         html += '<span class="t-badge ' + (t.status==='done'?'b-done':'b-todo') + '">' + (t.status==='done'?'已完成':'待完成') + '</span>';
         if (t.multi === 'yes') html += '<span class="t-badge b-multi">📅 ' + t.doneDays + '/' + t.totalDays + '天</span>';
-        html += '</div></div></div></div>';
+        html += '</div></div></div>';
+        html += '<div class="t-actions"><button class="t-btn" title="复制" onclick="copyTask(' + t.id + ')" style="color:var(--accent)">📋</button>';
+        html += '<button class="t-btn" title="编辑" onclick="editTask(' + t.id + ')">✎</button>';
+        html += '<button class="t-btn del" title="删除" onclick="delTask(' + t.id + ')">✕</button>';
+        html += '</div></div></div>';
       });
       c.innerHTML = html;
     }
@@ -3781,6 +3867,7 @@
           html += '<div class="progress-track"><div class="progress-fill" style="width:' + pct + '%"></div></div></div>';
         }
         html += '</div></div><div class="t-actions">';
+        html += '<button class="t-btn" title="复制" onclick="copyTask(' + t.id + ')" style="color:var(--accent)">📋</button>';
         if (t.status === 'done') html += '<button class="t-btn" title="重开任务" onclick="reopenTask(' + t.id + ')" style="color:var(--warning)">↻</button>';
         if (t.multi === 'yes' && t.status !== 'done') html += '<button class="t-btn" title="增加完成天数" onclick="addMultiDay(' + t.id + ')">+</button>';
         html += '<button class="t-btn" title="编辑" onclick="editTask(' + t.id + ')">✎</button>';
@@ -4920,7 +5007,8 @@
         return '<div class="diary-entry"><div class="diary-entry-top"><div style="flex:1">'
           + '<div class="diary-entry-title">' + d.mood + ' ' + esc(d.title) + '</div>'
           + '<div class="diary-entry-date">' + formatDateCN(d.date) + '</div></div>'
-          + '<div style="display:flex;gap:0.2rem"><button class="t-btn" onclick="editDiary(' + d.id + ')">✎</button>'
+          + '<div style="display:flex;gap:0.2rem"><button class="t-btn" title="复制" onclick="copyDiary(' + d.id + ')" style="color:var(--accent)">📋</button>'
+          + '<button class="t-btn" onclick="editDiary(' + d.id + ')">✎</button>'
           + '<button class="t-btn del" onclick="delDiary(' + d.id + ')">✕</button></div></div>'
           + '<div class="diary-entry-content">' + esc(d.content) + '</div></div>';
       }).join('');
@@ -4959,19 +5047,163 @@
     }
 
     // ===== Task Modal =====
+    var calYear = new Date().getFullYear();
+    var calMonth = new Date().getMonth();
+    var selectedDates = [];
+    var MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+    function pad2(n) { return String(n).padStart(2,'0'); }
+    function dateToStr(d) { return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate()); }
+    function strToDate(s) { var p = s.split('-'); return new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2])); }
+
+    function renderCal() {
+      var label = document.getElementById('calMonthLabel');
+      var container = document.getElementById('calDays');
+      if (!label || !container) return;
+      label.textContent = calYear + '年 ' + MONTHS[calMonth];
+      var firstDay = new Date(calYear, calMonth, 1);
+      var lastDay = new Date(calYear, calMonth + 1, 0);
+      var startWeekday = (firstDay.getDay() + 6) % 7;
+      var todayStr = dateToStr(new Date());
+      var minSel = selectedDates.length > 0 ? selectedDates[0] : null;
+      var maxSel = selectedDates.length > 0 ? selectedDates[selectedDates.length-1] : null;
+      var html = '';
+      for (var i = 0; i < startWeekday; i++) {
+        var prevDate = new Date(calYear, calMonth, 1 - (startWeekday - i));
+        var pds = dateToStr(prevDate);
+        var cls = 'mini-cal-day other-month';
+        if (selectedDates.indexOf(pds) >= 0) cls += ' selected';
+        else if (minSel && maxSel && pds > minSel && pds < maxSel) cls += ' in-range';
+        html += '<div class="' + cls + '" onclick="toggleDate(\'' + pds + '\')">' + prevDate.getDate() + '</div>';
+      }
+      for (var d = 1; d <= lastDay.getDate(); d++) {
+        var ds = calYear + '-' + pad2(calMonth+1) + '-' + pad2(d);
+        var cls = 'mini-cal-day';
+        if (selectedDates.indexOf(ds) >= 0) cls += ' selected';
+        else if (minSel && maxSel && ds > minSel && ds < maxSel) cls += ' in-range';
+        if (ds === todayStr) cls += ' today';
+        html += '<div class="' + cls + '" onclick="toggleDate(\'' + ds + '\')">' + d + '</div>';
+      }
+      var totalCells = startWeekday + lastDay.getDate();
+      var remaining = (7 - totalCells % 7) % 7;
+      for (var j = 1; j <= remaining; j++) {
+        var nextDate = new Date(calYear, calMonth + 1, j);
+        var nds = dateToStr(nextDate);
+        var cls = 'mini-cal-day other-month';
+        if (selectedDates.indexOf(nds) >= 0) cls += ' selected';
+        else if (minSel && maxSel && nds > minSel && nds < maxSel) cls += ' in-range';
+        html += '<div class="' + cls + '" onclick="toggleDate(\'' + nds + '\')">' + j + '</div>';
+      }
+      container.innerHTML = html;
+      var info = document.getElementById('calInfo');
+      if (info) {
+        if (selectedDates.length === 0) info.textContent = '请至少选择一个日期';
+        else if (selectedDates.length === 1) info.textContent = '已选: ' + selectedDates[0];
+        else info.textContent = '已选 ' + selectedDates.length + ' 天: ' + selectedDates[0] + ' ~ ' + selectedDates[selectedDates.length-1];
+      }
+    }
+    function calNav(dir) {
+      calMonth += dir;
+      if (calMonth < 0) { calMonth = 11; calYear--; }
+      else if (calMonth > 11) { calMonth = 0; calYear++; }
+      renderCal();
+    }
+    function toggleDate(ds) {
+      var i = selectedDates.indexOf(ds);
+      if (i >= 0) selectedDates.splice(i, 1);
+      else { selectedDates.push(ds); selectedDates.sort(); }
+      renderCal();
+      updateCrossDayPreview();
+    }
+    function calToday() {
+      var today = new Date();
+      calYear = today.getFullYear();
+      calMonth = today.getMonth();
+      var ts = dateToStr(today);
+      if (selectedDates.indexOf(ts) < 0) { selectedDates.push(ts); selectedDates.sort(); }
+      renderCal();
+      updateCrossDayPreview();
+    }
+    function calWeekdays() {
+      var today = new Date();
+      var monday = new Date(today);
+      var dayOfWeek = (today.getDay() + 6) % 7;
+      monday.setDate(today.getDate() - dayOfWeek);
+      selectedDates = [];
+      for (var i = 0; i < 5; i++) {
+        var d = new Date(monday);
+        d.setDate(monday.getDate() + i);
+        selectedDates.push(dateToStr(d));
+      }
+      calYear = monday.getFullYear();
+      calMonth = monday.getMonth();
+      renderCal();
+      updateCrossDayPreview();
+    }
+    function calClear() {
+      selectedDates = [];
+      renderCal();
+      updateCrossDayPreview();
+    }
+    function initTimeSelects() {
+      var sh = document.getElementById('fStartH'), sm = document.getElementById('fStartM');
+      var eh = document.getElementById('fEndH'), em = document.getElementById('fEndM');
+      if (!sh || !sh.options.length) {
+        var hHTML = '', mHTML = '';
+        for (var h = 0; h < 24; h++) hHTML += '<option value="' + pad2(h) + '">' + pad2(h) + '</option>';
+        for (var m = 0; m < 60; m += 5) mHTML += '<option value="' + pad2(m) + '">' + pad2(m) + '</option>';
+        if (sh) { sh.innerHTML = hHTML; sm.innerHTML = mHTML; eh.innerHTML = hHTML; em.innerHTML = mHTML; }
+      }
+    }
+    function setTimeVal(prefix, timeStr) {
+      var parts = (timeStr || '09:30').split(':');
+      document.getElementById(prefix + 'H').value = parts[0] || '09';
+      document.getElementById(prefix + 'M').value = parts[1] ? pad2(Math.round(parseInt(parts[1])/5)*5 % 60) : '30';
+    }
+    function getTimeVal(prefix) {
+      return document.getElementById(prefix + 'H').value + ':' + document.getElementById(prefix + 'M').value;
+    }
+    function formatDateShort(ds) {
+      var p = ds.split('-');
+      return parseInt(p[1]) + '月' + parseInt(p[2]) + '日';
+    }
+    function getWeekdayStr(ds) {
+      var d = strToDate(ds);
+      return ['周日','周一','周二','周三','周四','周五','周六'][d.getDay()];
+    }
+    function updateCrossDayPreview() {
+      var c = document.getElementById('crossDayPreview');
+      if (!c) return;
+      var timeStr = getTimeVal('fStart') + ' - ' + getTimeVal('fEnd');
+      var todayStr = dateToStr(new Date());
+      if (selectedDates.length === 0) { c.innerHTML = ''; return; }
+      var html = '';
+      selectedDates.forEach(function(ds, i) {
+        var isToday = ds === todayStr;
+        html += '<div class="cdp-item' + (isToday ? ' cdp-today' : '') + '">'
+          + '<span class="cdp-dot"></span>'
+          + '<span class="cdp-date">' + formatDateShort(ds) + ' ' + getWeekdayStr(ds) + (isToday ? ' (今天)' : '') + '</span>'
+          + '<span class="cdp-time">' + timeStr + '</span>'
+          + '</div>';
+      });
+      c.innerHTML = html;
+    }
     function openModal(id) {
       document.getElementById('taskModal').classList.add('show');
       document.getElementById('modalTitle').textContent = id ? '编辑任务' : '添加任务';
       document.getElementById('fEditId').value = id || '';
+      initTimeSelects();
       if (id) {
         var t = getTasks().find(function(x){ return x.id === id; });
         if (t) {
           document.getElementById('fName').value = t.name;
           document.getElementById('fModule').value = t.module;
-          document.getElementById('fDate').value = t.date || currentDate || getDateStr(0);
+          var taskDate = t.date || currentDate || dateToStr(new Date());
+          selectedDates = [taskDate];
+          var d = strToDate(taskDate);
+          calYear = d.getFullYear(); calMonth = d.getMonth();
           var parts = t.time.split(' - ');
-          document.getElementById('fStart').value = parts[0] || '09:30';
-          document.getElementById('fEnd').value = parts[1] || '19:00';
+          setTimeVal('fStart', parts[0] || '09:30');
+          setTimeVal('fEnd', parts[1] || '19:00');
           document.getElementById('fStatus').value = t.status;
           document.getElementById('fPriority').value = t.priority;
           document.getElementById('fDesc').value = t.desc || '';
@@ -4981,6 +5213,8 @@
           else if (t.multi === 'yes') { repeatType = 'multi'; repeatDays = t.totalDays || 7; }
           document.getElementById('fRepeat').value = repeatType;
           document.getElementById('fRepeatDays').value = repeatDays;
+          renderCal();
+          updateCrossDayPreview();
           toggleRepeat();
           toggleModule();
         }
@@ -4988,16 +5222,21 @@
         var moduleMap = { work: 'work', english: 'english', media: 'media', diary: 'work' };
         document.getElementById('fName').value = '';
         document.getElementById('fModule').value = moduleMap[currentView] || 'work';
-        document.getElementById('fDate').value = currentDate || getDateStr(0);
-        document.getElementById('fStart').value = '09:30';
-        document.getElementById('fEnd').value = '19:00';
+        var defaultDate = currentDate || dateToStr(new Date());
+        selectedDates = [defaultDate];
+        var d = strToDate(defaultDate);
+        calYear = d.getFullYear(); calMonth = d.getMonth();
+        setTimeVal('fStart', '09:30');
+        setTimeVal('fEnd', '19:00');
         document.getElementById('fStatus').value = 'todo';
         document.getElementById('fPriority').value = 'medium';
         document.getElementById('fRepeat').value = 'no';
         document.getElementById('fRepeatDays').value = 7;
         document.getElementById('fDesc').value = '';
-          toggleRepeat();
-          toggleModule();
+        renderCal();
+        updateCrossDayPreview();
+        toggleRepeat();
+        toggleModule();
       }
       setTimeout(function(){ document.getElementById('fName').focus(); }, 100);
     }
@@ -5048,38 +5287,33 @@
     function saveTask() {
       var name = document.getElementById('fName').value.trim();
       if (!name) { showToast('请输入任务名称', 'warn'); return; }
+      if (selectedDates.length === 0) { showToast('请至少选择一个日期', 'warn'); return; }
       var tasks = getTasks();
       var id = document.getElementById('fEditId').value;
       var repeatType = document.getElementById('fRepeat').value;
       var repeatDays = parseInt(document.getElementById('fRepeatDays').value) || 7;
-      var baseTask = {
-        name: name,
-        module: document.getElementById('fModule').value,
-        date: document.getElementById('fDate').value || currentDate || getDateStr(0),
-        time: document.getElementById('fStart').value + ' - ' + document.getElementById('fEnd').value,
-        status: document.getElementById('fStatus').value,
-        priority: document.getElementById('fPriority').value,
-        desc: document.getElementById('fDesc').value.trim()
-      };
+      var timeStr = getTimeVal('fStart') + ' - ' + getTimeVal('fEnd');
+      var module = document.getElementById('fModule').value;
+      var status = document.getElementById('fStatus').value;
+      var priority = document.getElementById('fPriority').value;
+      var desc = document.getElementById('fDesc').value.trim();
 
-      if (baseTask.module === 'memo') {
+      if (module === 'memo') {
         var memos = getMemos();
-        var memoStatus = document.getElementById('fStatus').value;
-        var memoDate = baseTask.date;
         var newMemoId = memos.length > 0 ? Math.max.apply(null, memos.map(function(m){ return m.id; })) + 1 : 1;
         if (id) {
           var memoIdx = memos.findIndex(function(m){ return String(m.id) === id; });
           if (memoIdx !== -1) {
             memos[memoIdx].text = name;
-            memos[memoIdx].status = memoStatus;
-            memos[memoIdx].date = memoDate;
+            memos[memoIdx].status = status;
+            memos[memoIdx].date = selectedDates[0];
           } else {
             var taskIdx = tasks.findIndex(function(x){ return x.id === parseInt(id); });
             if (taskIdx !== -1) tasks.splice(taskIdx, 1);
-            memos.push({ id: newMemoId, text: name, status: memoStatus, date: memoDate });
+            memos.push({ id: newMemoId, text: name, status: status, date: selectedDates[0] });
           }
         } else {
-          memos.push({ id: newMemoId, text: name, status: memoStatus, date: memoDate });
+          memos.push({ id: newMemoId, text: name, status: status, date: selectedDates[0] });
         }
         save('memos', memos);
         save('tasks', tasks);
@@ -5092,13 +5326,13 @@
       if (id) {
         var idx = tasks.findIndex(function(x){ return x.id === parseInt(id); });
         if (idx !== -1) {
-          tasks[idx].name = baseTask.name;
-          tasks[idx].module = baseTask.module;
-          tasks[idx].date = baseTask.date;
-          tasks[idx].time = baseTask.time;
-          tasks[idx].status = baseTask.status;
-          tasks[idx].priority = baseTask.priority;
-          tasks[idx].desc = baseTask.desc;
+          tasks[idx].name = name;
+          tasks[idx].module = module;
+          tasks[idx].date = selectedDates[0];
+          tasks[idx].time = timeStr;
+          tasks[idx].status = status;
+          tasks[idx].priority = priority;
+          tasks[idx].desc = desc;
           if (repeatType === 'multi') {
             tasks[idx].multi = 'yes';
             tasks[idx].totalDays = repeatDays;
@@ -5117,60 +5351,53 @@
       } else {
         if (repeatType === 'daily') {
           var newId = nextId(tasks);
-          var startDate = baseTask.date;
+          var startDate = selectedDates[0];
           for (var i = 0; i < repeatDays; i++) {
             var d = new Date(startDate + 'T00:00:00');
             d.setDate(d.getDate() + i);
-            var dateStr = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+            var dateStr = d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate());
             tasks.push({
               id: newId + i,
-              name: baseTask.name,
-              module: baseTask.module,
-              time: baseTask.time,
+              name: name,
+              module: module,
+              time: timeStr,
               status: 'todo',
-              priority: baseTask.priority,
+              priority: priority,
               date: dateStr,
               multi: 'no',
               totalDays: 1,
               doneDays: 0,
-              desc: baseTask.desc,
+              desc: desc,
               repeat: 'daily',
               repeatId: newId
             });
           }
           showToast('已创建 ' + repeatDays + ' 天每日重复任务');
-        } else if (repeatType === 'multi') {
-          tasks.push({
-            id: nextId(tasks),
-            name: baseTask.name,
-            module: baseTask.module,
-            time: baseTask.time,
-            status: baseTask.status,
-            priority: baseTask.priority,
-            date: baseTask.date,
-            multi: 'yes',
-            totalDays: repeatDays,
-            doneDays: 0,
-            desc: baseTask.desc,
-            repeat: 'no'
-          });
-          showToast('已添加多天任务');
         } else {
-          tasks.push({
-            id: nextId(tasks),
-            name: baseTask.name,
-            module: baseTask.module,
-            time: baseTask.time,
-            status: baseTask.status,
-            priority: baseTask.priority,
-            date: baseTask.date,
-            multi: 'no',
-            totalDays: 1,
-            doneDays: 0,
-            desc: baseTask.desc,
-            repeat: 'no'
-          });
-          showToast('任务已添加');
+          var baseId = nextId(tasks);
+          for (var i = 0; i < selectedDates.length; i++) {
+            tasks.push({
+              id: baseId + i,
+              name: name,
+              module: module,
+              time: timeStr,
+              status: status,
+              priority: priority,
+              date: selectedDates[i],
+              multi: repeatType === 'multi' ? 'yes' : 'no',
+              totalDays: repeatType === 'multi' ? repeatDays : 1,
+              doneDays: 0,
+              desc: desc,
+              repeat: 'no'
+            });
+          }
+          if (selectedDates.length > 1) {
+            showToast('已为 ' + selectedDates.length + ' 天创建任务');
+          } else if (repeatType === 'multi') {
+            showToast('已添加多天任务');
+          } else {
+            showToast('任务已添加');
+          }
         }
       }
       save('tasks', tasks); closeModal(); rerender();
@@ -5244,6 +5471,7 @@
         if (m.status === 'done') html += ' style="text-decoration:line-through;color:var(--muted)"';
         html += '>' + esc(m.text) + '</div>'
           + '</div></div><div class="t-actions">'
+          + '<button class="t-btn" title="复制" onclick="copyMemo(' + m.id + ')" style="color:var(--accent)">📋</button>'
           + '<button class="t-btn" title="编辑" onclick="openMemoModal(' + m.id + ')">✎</button>'
           + '<button class="t-btn del" title="删除" onclick="delMemo(' + m.id + ')">✕</button>'
           + '</div></div></div>';
@@ -5379,25 +5607,39 @@
       if (currentView === 'quote') renderQuotes();
       showToast('语录已添加');
     }
+    function copyText(text, label) {
+      if (!text) { showToast('无内容可复制', 'warn'); return; }
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(function() {
+          showToast((label || '内容') + '已复制');
+        }).catch(function() { fallbackCopy(text, label); });
+      } else { fallbackCopy(text, label); }
+    }
+    function fallbackCopy(text, label) {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0';
+      document.body.appendChild(ta);
+      ta.focus(); ta.select();
+      try { document.execCommand('copy'); showToast((label || '内容') + '已复制'); }
+      catch(e) { showToast('复制失败，请手动选择文本复制', 'warn'); }
+      document.body.removeChild(ta);
+    }
     function copyQuote(id) {
       var q = getQuotes().find(function(x){ return x.id === id; });
-      if (q) {
-        if (navigator.clipboard) {
-          navigator.clipboard.writeText(q.text).then(function() {
-            showToast('已复制到剪贴板');
-          }).catch(function() {
-            showToast('复制失败', 'warn');
-          });
-        } else {
-          var ta = document.createElement('textarea');
-          ta.value = q.text;
-          document.body.appendChild(ta);
-          ta.select();
-          document.execCommand('copy');
-          document.body.removeChild(ta);
-          showToast('已复制到剪贴板');
-        }
-      }
+      if (q) copyText(q.text, '语录');
+    }
+    function copyTask(id) {
+      var t = getTasks().find(function(x){ return x.id === id; });
+      if (t) copyText(t.name + (t.desc ? '\n' + t.desc : ''), '任务');
+    }
+    function copyMemo(id) {
+      var m = getMemos().find(function(x){ return x.id === id; });
+      if (m) copyText(m.text, '备忘录');
+    }
+    function copyDiary(id) {
+      var d = getDiary().find(function(x){ return x.id === id; });
+      if (d) copyText((d.title || '') + (d.content ? '\n' + d.content : ''), '日记');
     }
     function delQuote(id) {
       try {
