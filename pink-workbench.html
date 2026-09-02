@@ -1008,6 +1008,35 @@
     .cdp-item.cdp-today { border-color: var(--accent); background: var(--accent-soft); }
     .cdp-item.cdp-today .cdp-dot { background: var(--accent); }
 
+    /* === Dictionary === */
+    .dict-search-bar { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+    .dict-search-bar input { flex: 1; padding: 0.65rem 0.8rem; border-radius: 12px; border: 1.5px solid var(--rule); background: var(--bg); font-family: var(--font); font-size: 1rem; color: var(--ink); outline: none; transition: border-color 0.15s; }
+    .dict-search-bar input:focus { border-color: var(--accent); }
+    .dict-search-btn { background: var(--accent); color: #fff; border: none; border-radius: 12px; width: 44px; height: 44px; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; flex-shrink: 0; }
+    .dict-search-btn:hover { background: var(--accent-dark, #d6627b); transform: scale(1.05); }
+    .dict-result { min-height: 100px; }
+    .dict-card { background: var(--bg); border: 1px solid var(--rule); border-radius: 14px; padding: 1.2rem; animation: fadeIn 0.25s ease; }
+    .dict-word-row { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+    .dict-word { font-size: 1.6rem; font-weight: 800; color: var(--ink); line-height: 1.5; }
+    .dict-phonetic { font-size: 0.9rem; color: var(--accent); font-weight: 600; }
+    .dict-play-btn { background: var(--accent-soft); border: none; border-radius: 50%; width: 34px; height: 34px; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+    .dict-play-btn:hover { background: var(--accent); }
+    .dict-fav-btn { background: var(--bg2); border: 1px solid var(--rule); border-radius: 8px; padding: 0.3rem 0.7rem; font-size: 0.75rem; cursor: pointer; color: var(--ink); transition: all 0.15s; }
+    .dict-fav-btn:hover { background: var(--accent-soft); border-color: var(--accent); }
+    .dict-fav-btn.faved { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .dict-meanings { margin-top: 0.6rem; }
+    .dict-meaning-item { padding: 0.5rem 0; border-bottom: 1px solid var(--rule); }
+    .dict-meaning-item:last-child { border-bottom: none; }
+    .dict-pos { font-size: 0.72rem; font-weight: 700; color: var(--accent); background: var(--accent-soft); padding: 0.1rem 0.5rem; border-radius: 6px; display: inline-block; margin-bottom: 0.3rem; }
+    .dict-def { font-size: 0.88rem; color: var(--ink); line-height: 1.6; }
+    .dict-loading { text-align: center; padding: 2rem; color: var(--muted); font-size: 0.85rem; }
+    .dict-error { text-align: center; padding: 2rem; color: #e85a6e; font-size: 0.85rem; }
+    .dict-history { margin-top: 1.2rem; }
+    .dict-history-title { font-size: 0.78rem; font-weight: 700; color: var(--muted); margin-bottom: 0.5rem; }
+    .dict-history-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+    .dict-history-tag { background: var(--bg2); border: 1px solid var(--rule); border-radius: 8px; padding: 0.25rem 0.65rem; font-size: 0.78rem; color: var(--ink); cursor: pointer; transition: all 0.12s; }
+    .dict-history-tag:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+
     /* === Toast === */
     .toast-wrap { position: fixed; top: 1.25rem; right: 1.25rem; z-index: 2000; display: flex; flex-direction: column; gap: 0.5rem; }
     .toast { background: var(--bg2); border-radius: 12px; padding: 0.7rem 1.1rem; box-shadow: var(--shadow-md); border: 1px solid var(--rule); font-size: 0.85rem; font-weight: 500; display: flex; align-items: center; gap: 0.45rem; animation: tIn 0.3s ease, tOut 0.3s ease 2.5s forwards; }
@@ -1561,6 +1590,7 @@
     <div class="view" id="viewEnglish">
       <div class="flash-tabs">
         <button class="flash-tab active" data-tab="study" onclick="setFlashTab('study')">📚 学习中</button>
+        <button class="flash-tab" data-tab="dict" onclick="setFlashTab('dict')">📖 字典</button>
         <button class="flash-tab" data-tab="favorites" onclick="setFlashTab('favorites')">♡ 收藏夹 <span class="badge" id="favBadge">0</span></button>
         <button class="flash-tab" data-tab="errors" onclick="setFlashTab('errors')">⚠️ 错题本 <span class="badge" id="errBadge">0</span></button>
         <button class="flash-tab" data-tab="review" onclick="setFlashTab('review')">🔄 周复习 <span class="badge" id="reviewBadge">0</span></button>
@@ -1597,6 +1627,14 @@
           📌 已掌握的句子会进入周复习，复习完可以移除。每周持续迭代，巩固记忆。
         </div>
         <div class="sentence-list" id="reviewList"></div>
+      </div>
+      <div id="flashDict" style="display:none">
+        <div class="dict-search-bar">
+          <input type="text" id="dictInput" placeholder="输入单词查询..." onkeydown="if(event.key==='Enter')dictSearch()">
+          <button class="dict-search-btn" onclick="dictSearch()">🔍</button>
+        </div>
+        <div id="dictResult" class="dict-result"></div>
+        <div class="dict-history" id="dictHistory"></div>
       </div>
       <div class="hot-card" style="margin-top:1.5rem">
         <div class="hot-header"><h3>📰 BBC英语学习素材</h3><button class="hot-refresh" onclick="fetchBBCNews()">↻ 刷新</button></div>
@@ -1856,42 +1894,15 @@
       <h2 id="modalTitle">添加任务</h2>
       <div class="fg"><label>任务名称</label><input type="text" id="fName" placeholder="输入任务名称..."></div>
       <div class="fg"><label>所属模块</label><select id="fModule" onchange="toggleModule()"><option value="work">💼 工作</option><option value="english">📚 英语学习</option><option value="media">🎬 自媒体创作</option><option value="period">🌸 经期管理</option><option value="memo">📌 备忘录</option></select></div>
-      <div class="fg" id="fDateGroup"><label>任务日期 <span style="font-size:0.7rem;font-weight:400;color:var(--muted)">点击日期可多选（跨天）</span></label>
-        <div class="mini-cal">
-          <div class="mini-cal-header"><button type="button" onclick="calNav(-1)">‹</button><span id="calMonthLabel"></span><button type="button" onclick="calNav(1)">›</button></div>
-          <div class="mini-cal-weekdays"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>
-          <div class="mini-cal-days" id="calDays"></div>
-          <div class="mini-cal-info" id="calInfo">已选 1 天</div>
-          <div class="mini-cal-actions">
-            <button type="button" onclick="calToday()">今天</button>
-            <button type="button" onclick="calWeekdays()">本周工作日</button>
-            <button type="button" onclick="calClear()">清除</button>
-          </div>
-        </div>
+      <div class="fg-row" id="fDateGroup">
+        <div class="fg"><label>开始日期</label><input type="date" id="fDateStart" onchange="updateDateRangePreview()"></div>
+        <div class="fg"><label>结束日期 <span style="font-size:0.7rem;font-weight:400;color:var(--muted)">跨天请选不同日期</span></label><input type="date" id="fDateEnd" onchange="updateDateRangePreview()"></div>
       </div>
-      <div class="fg" id="fTimeRow">
-        <label>时间段 <span style="font-size:0.7rem;font-weight:400;color:var(--muted)">所选时间将同步到每个日期</span></label>
-        <div class="time-range-wrap">
-          <div class="time-block">
-            <div class="time-block-label">开始</div>
-            <div class="time-block-inputs">
-              <select id="fStartH" onchange="updateCrossDayPreview()"></select>
-              <span class="colon">:</span>
-              <select id="fStartM" onchange="updateCrossDayPreview()"></select>
-            </div>
-          </div>
-          <div class="time-arrow">→</div>
-          <div class="time-block">
-            <div class="time-block-label">结束</div>
-            <div class="time-block-inputs">
-              <select id="fEndH" onchange="updateCrossDayPreview()"></select>
-              <span class="colon">:</span>
-              <select id="fEndM" onchange="updateCrossDayPreview()"></select>
-            </div>
-          </div>
-        </div>
-        <div class="cross-day-preview" id="crossDayPreview"></div>
+      <div class="fg-row" id="fTimeRow">
+        <div class="fg"><label>开始时间</label><input type="time" id="fStartTime" value="09:30" onchange="updateDateRangePreview()"></div>
+        <div class="fg"><label>结束时间</label><input type="time" id="fEndTime" value="19:00" onchange="updateDateRangePreview()"></div>
       </div>
+      <div class="cross-day-preview" id="crossDayPreview"></div>
       <div class="fg-row-3" id="fStatusRow">
         <div class="fg"><label>状态</label><select id="fStatus"><option value="todo">待完成</option><option value="done">已完成</option></select></div>
         <div class="fg"><label>重复类型</label><select id="fRepeat" onchange="toggleRepeat()"><option value="no">不重复</option><option value="multi">多天任务</option><option value="daily">每日重复</option></select></div>
@@ -3943,9 +3954,11 @@
       document.getElementById('flashFavorites').style.display = tab === 'favorites' ? 'block' : 'none';
       document.getElementById('flashErrors').style.display = tab === 'errors' ? 'block' : 'none';
       document.getElementById('flashReview').style.display = tab === 'review' ? 'block' : 'none';
+      document.getElementById('flashDict').style.display = tab === 'dict' ? 'block' : 'none';
       if (tab === 'favorites') { setFlashSubTab(flashSubTab === 'errSentences' || flashSubTab === 'errWords' ? 'favSentences' : flashSubTab); }
       if (tab === 'errors') { setFlashSubTab(flashSubTab === 'favSentences' || flashSubTab === 'favWords' ? 'errSentences' : flashSubTab); }
       if (tab === 'review') renderReviewGrid();
+      if (tab === 'dict') renderDictHistory();
     }
 
     function setFlashSubTab(sub) {
@@ -4163,6 +4176,119 @@
       if (ewb) ewb.textContent = errorWords.length;
       var rb = document.getElementById('reviewBadge');
       if (rb) rb.textContent = masteredSents.length;
+    }
+
+    // ===== Dictionary =====
+    var dictHistory = load('dict_history', []);
+    var dictFavs = load('dict_favs', []);
+    var dictCurrentWord = null;
+
+    function dictSearch() {
+      var word = document.getElementById('dictInput').value.trim();
+      if (!word) return;
+      word = word.toLowerCase();
+      var resultEl = document.getElementById('dictResult');
+      resultEl.innerHTML = '<div class="dict-loading">🔍 查询中...</div>';
+
+      var apiUrl = 'https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(word);
+      fetch(apiUrl)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (!Array.isArray(data) || data.length === 0) {
+            resultEl.innerHTML = '<div class="dict-error">未找到"' + word + '"，请检查拼写</div>';
+            return;
+          }
+          var entry = data[0];
+          var phonetic = '';
+          if (entry.phonetic) phonetic = entry.phonetic;
+          else if (entry.phonetics && entry.phonetics.length) {
+            for (var i = 0; i < entry.phonetics.length; i++) {
+              if (entry.phonetics[i].text) { phonetic = entry.phonetics[i].text; break; }
+            }
+          }
+          var audioUrl = '';
+          if (entry.phonetics && entry.phonetics.length) {
+            for (var i = 0; i < entry.phonetics.length; i++) {
+              if (entry.phonetics[i].audio) { audioUrl = entry.phonetics[i].audio; break; }
+            }
+          }
+          var meaningsHtml = '';
+          if (entry.meanings) {
+            entry.meanings.forEach(function(m) {
+              var pos = m.partOfSpeech || '';
+              var defs = [];
+              if (m.definitions) {
+                m.definitions.slice(0, 5).forEach(function(d) {
+                  defs.push(d.definition);
+                });
+              }
+              meaningsHtml += '<div class="dict-meaning-item"><span class="dict-pos">' + pos + '</span><div class="dict-def">' + defs.join('<br>') + '</div></div>';
+            });
+          }
+          dictCurrentWord = { word: word, phonetic: phonetic, audio: audioUrl, meanings: entry.meanings || [] };
+          var isFav = dictFavs.some(function(f) { return f.word === word; });
+          var html = '<div class="dict-card">'
+            + '<div class="dict-word-row">'
+            + '<span class="dict-word">' + word + '</span>'
+            + (phonetic ? '<span class="dict-phonetic">' + phonetic + '</span>' : '')
+            + (audioUrl ? '<button class="dict-play-btn" onclick="dictPlay(\'' + audioUrl.replace(/'/g, "\\'") + '\')">🔊</button>' : '')
+            + '<button class="dict-fav-btn' + (isFav ? ' faved' : '') + '" onclick="dictFav()">' + (isFav ? '✓ 已收藏' : '♡ 收藏') + '</button>'
+            + '</div>'
+            + '<div class="dict-meanings">' + meaningsHtml + '</div>'
+            + '</div>';
+          resultEl.innerHTML = html;
+          if (audioUrl) dictPlay(audioUrl);
+          var hi = dictHistory.indexOf(word);
+          if (hi >= 0) dictHistory.splice(hi, 1);
+          dictHistory.unshift(word);
+          if (dictHistory.length > 20) dictHistory = dictHistory.slice(0, 20);
+          save('dict_history', dictHistory);
+          renderDictHistory();
+        })
+        .catch(function() {
+          resultEl.innerHTML = '<div class="dict-error">查询失败，请稍后重试</div>';
+        });
+    }
+
+    function dictPlay(url) {
+      try { new Audio(url).play(); } catch(e) {}
+    }
+
+    function dictFav() {
+      if (!dictCurrentWord) return;
+      var word = dictCurrentWord.word;
+      var idx = dictFavs.findIndex(function(f) { return f.word === word; });
+      if (idx >= 0) {
+        dictFavs.splice(idx, 1);
+        showToast('已取消收藏');
+      } else {
+        dictFavs.unshift({ word: word, phonetic: dictCurrentWord.phonetic, audio: dictCurrentWord.audio, meanings: dictCurrentWord.meanings, date: dateToStr(new Date()) });
+        showToast('已收藏: ' + word);
+      }
+      save('dict_favs', dictFavs);
+      var btn = document.querySelector('.dict-fav-btn');
+      if (btn) {
+        var isFav = dictFavs.some(function(f) { return f.word === word; });
+        btn.classList.toggle('faved', isFav);
+        btn.textContent = isFav ? '✓ 已收藏' : '♡ 收藏';
+      }
+    }
+
+    function renderDictHistory() {
+      var el = document.getElementById('dictHistory');
+      if (!el) return;
+      if (dictHistory.length === 0) { el.innerHTML = ''; return; }
+      var html = '<div class="dict-history-title">📜 最近查询</div><div class="dict-history-tags">';
+      dictHistory.forEach(function(w) {
+        html += '<span class="dict-history-tag" onclick="dictSearchWord(\'' + w.replace(/'/g, "\\'") + '\')">' + w + '</span>';
+      });
+      html += '</div>';
+      el.innerHTML = html;
+    }
+
+    function dictSearchWord(word) {
+      document.getElementById('dictInput').value = word;
+      dictSearch();
     }
 
     // ===== Stock Market View =====
@@ -5054,112 +5180,23 @@
     function dateToStr(d) { return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate()); }
     function strToDate(s) { var p = s.split('-'); return new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2])); }
 
-    function renderCal() {
-      var label = document.getElementById('calMonthLabel');
-      var container = document.getElementById('calDays');
-      if (!label || !container) return;
-      label.textContent = calYear + '年 ' + MONTHS[calMonth];
-      var firstDay = new Date(calYear, calMonth, 1);
-      var lastDay = new Date(calYear, calMonth + 1, 0);
-      var startWeekday = (firstDay.getDay() + 6) % 7;
-      var todayStr = dateToStr(new Date());
-      var minSel = selectedDates.length > 0 ? selectedDates[0] : null;
-      var maxSel = selectedDates.length > 0 ? selectedDates[selectedDates.length-1] : null;
-      var html = '';
-      for (var i = 0; i < startWeekday; i++) {
-        var prevDate = new Date(calYear, calMonth, 1 - (startWeekday - i));
-        var pds = dateToStr(prevDate);
-        var cls = 'mini-cal-day other-month';
-        if (selectedDates.indexOf(pds) >= 0) cls += ' selected';
-        else if (minSel && maxSel && pds > minSel && pds < maxSel) cls += ' in-range';
-        html += '<div class="' + cls + '" onclick="toggleDate(\'' + pds + '\')">' + prevDate.getDate() + '</div>';
+    function getSelectedDates() {
+      var ds = document.getElementById('fDateStart').value;
+      var de = document.getElementById('fDateEnd').value;
+      if (!ds) return [];
+      if (!de || de < ds) return [ds];
+      var dates = [];
+      var cur = new Date(ds + 'T00:00:00');
+      var end = new Date(de + 'T00:00:00');
+      while (cur <= end) {
+        dates.push(cur.getFullYear() + '-' + pad2(cur.getMonth()+1) + '-' + pad2(cur.getDate()));
+        cur.setDate(cur.getDate() + 1);
       }
-      for (var d = 1; d <= lastDay.getDate(); d++) {
-        var ds = calYear + '-' + pad2(calMonth+1) + '-' + pad2(d);
-        var cls = 'mini-cal-day';
-        if (selectedDates.indexOf(ds) >= 0) cls += ' selected';
-        else if (minSel && maxSel && ds > minSel && ds < maxSel) cls += ' in-range';
-        if (ds === todayStr) cls += ' today';
-        html += '<div class="' + cls + '" onclick="toggleDate(\'' + ds + '\')">' + d + '</div>';
-      }
-      var totalCells = startWeekday + lastDay.getDate();
-      var remaining = (7 - totalCells % 7) % 7;
-      for (var j = 1; j <= remaining; j++) {
-        var nextDate = new Date(calYear, calMonth + 1, j);
-        var nds = dateToStr(nextDate);
-        var cls = 'mini-cal-day other-month';
-        if (selectedDates.indexOf(nds) >= 0) cls += ' selected';
-        else if (minSel && maxSel && nds > minSel && nds < maxSel) cls += ' in-range';
-        html += '<div class="' + cls + '" onclick="toggleDate(\'' + nds + '\')">' + j + '</div>';
-      }
-      container.innerHTML = html;
-      var info = document.getElementById('calInfo');
-      if (info) {
-        if (selectedDates.length === 0) info.textContent = '请至少选择一个日期';
-        else if (selectedDates.length === 1) info.textContent = '已选: ' + selectedDates[0];
-        else info.textContent = '已选 ' + selectedDates.length + ' 天: ' + selectedDates[0] + ' ~ ' + selectedDates[selectedDates.length-1];
-      }
-    }
-    function calNav(dir) {
-      calMonth += dir;
-      if (calMonth < 0) { calMonth = 11; calYear--; }
-      else if (calMonth > 11) { calMonth = 0; calYear++; }
-      renderCal();
-    }
-    function toggleDate(ds) {
-      var i = selectedDates.indexOf(ds);
-      if (i >= 0) selectedDates.splice(i, 1);
-      else { selectedDates.push(ds); selectedDates.sort(); }
-      renderCal();
-      updateCrossDayPreview();
-    }
-    function calToday() {
-      var today = new Date();
-      calYear = today.getFullYear();
-      calMonth = today.getMonth();
-      var ts = dateToStr(today);
-      if (selectedDates.indexOf(ts) < 0) { selectedDates.push(ts); selectedDates.sort(); }
-      renderCal();
-      updateCrossDayPreview();
-    }
-    function calWeekdays() {
-      var today = new Date();
-      var monday = new Date(today);
-      var dayOfWeek = (today.getDay() + 6) % 7;
-      monday.setDate(today.getDate() - dayOfWeek);
-      selectedDates = [];
-      for (var i = 0; i < 5; i++) {
-        var d = new Date(monday);
-        d.setDate(monday.getDate() + i);
-        selectedDates.push(dateToStr(d));
-      }
-      calYear = monday.getFullYear();
-      calMonth = monday.getMonth();
-      renderCal();
-      updateCrossDayPreview();
-    }
-    function calClear() {
-      selectedDates = [];
-      renderCal();
-      updateCrossDayPreview();
-    }
-    function initTimeSelects() {
-      var sh = document.getElementById('fStartH'), sm = document.getElementById('fStartM');
-      var eh = document.getElementById('fEndH'), em = document.getElementById('fEndM');
-      if (!sh || !sh.options.length) {
-        var hHTML = '', mHTML = '';
-        for (var h = 0; h < 24; h++) hHTML += '<option value="' + pad2(h) + '">' + pad2(h) + '</option>';
-        for (var m = 0; m < 60; m += 5) mHTML += '<option value="' + pad2(m) + '">' + pad2(m) + '</option>';
-        if (sh) { sh.innerHTML = hHTML; sm.innerHTML = mHTML; eh.innerHTML = hHTML; em.innerHTML = mHTML; }
-      }
-    }
-    function setTimeVal(prefix, timeStr) {
-      var parts = (timeStr || '09:30').split(':');
-      document.getElementById(prefix + 'H').value = parts[0] || '09';
-      document.getElementById(prefix + 'M').value = parts[1] ? pad2(Math.round(parseInt(parts[1])/5)*5 % 60) : '30';
+      return dates;
     }
     function getTimeVal(prefix) {
-      return document.getElementById(prefix + 'H').value + ':' + document.getElementById(prefix + 'M').value;
+      var el = document.getElementById(prefix + 'ime');
+      return el ? el.value : '09:30';
     }
     function formatDateShort(ds) {
       var p = ds.split('-');
@@ -5169,20 +5206,21 @@
       var d = strToDate(ds);
       return ['周日','周一','周二','周三','周四','周五','周六'][d.getDay()];
     }
-    function updateCrossDayPreview() {
+    function updateDateRangePreview() {
       var c = document.getElementById('crossDayPreview');
       if (!c) return;
-      var timeStr = getTimeVal('fStart') + ' - ' + getTimeVal('fEnd');
+      var dates = getSelectedDates();
+      if (dates.length === 0) { c.innerHTML = ''; return; }
+      var timeStr = getTimeVal('fStartT') + ' - ' + getTimeVal('fEndT');
       var todayStr = dateToStr(new Date());
-      if (selectedDates.length === 0) { c.innerHTML = ''; return; }
+      if (dates.length === 1) {
+        c.innerHTML = '<div class="cdp-item' + (dates[0] === todayStr ? ' cdp-today' : '') + '"><span class="cdp-dot"></span><span class="cdp-date">' + formatDateShort(dates[0]) + ' ' + getWeekdayStr(dates[0]) + (dates[0] === todayStr ? ' (今天)' : '') + '</span><span class="cdp-time">' + timeStr + '</span></div>';
+        return;
+      }
       var html = '';
-      selectedDates.forEach(function(ds, i) {
+      dates.forEach(function(ds) {
         var isToday = ds === todayStr;
-        html += '<div class="cdp-item' + (isToday ? ' cdp-today' : '') + '">'
-          + '<span class="cdp-dot"></span>'
-          + '<span class="cdp-date">' + formatDateShort(ds) + ' ' + getWeekdayStr(ds) + (isToday ? ' (今天)' : '') + '</span>'
-          + '<span class="cdp-time">' + timeStr + '</span>'
-          + '</div>';
+        html += '<div class="cdp-item' + (isToday ? ' cdp-today' : '') + '"><span class="cdp-dot"></span><span class="cdp-date">' + formatDateShort(ds) + ' ' + getWeekdayStr(ds) + (isToday ? ' (今天)' : '') + '</span><span class="cdp-time">' + timeStr + '</span></div>';
       });
       c.innerHTML = html;
     }
@@ -5190,19 +5228,17 @@
       document.getElementById('taskModal').classList.add('show');
       document.getElementById('modalTitle').textContent = id ? '编辑任务' : '添加任务';
       document.getElementById('fEditId').value = id || '';
-      initTimeSelects();
       if (id) {
         var t = getTasks().find(function(x){ return x.id === id; });
         if (t) {
           document.getElementById('fName').value = t.name;
           document.getElementById('fModule').value = t.module;
           var taskDate = t.date || currentDate || dateToStr(new Date());
-          selectedDates = [taskDate];
-          var d = strToDate(taskDate);
-          calYear = d.getFullYear(); calMonth = d.getMonth();
+          document.getElementById('fDateStart').value = taskDate;
+          document.getElementById('fDateEnd').value = taskDate;
           var parts = t.time.split(' - ');
-          setTimeVal('fStart', parts[0] || '09:30');
-          setTimeVal('fEnd', parts[1] || '19:00');
+          document.getElementById('fStartTime').value = parts[0] || '09:30';
+          document.getElementById('fEndTime').value = parts[1] || '19:00';
           document.getElementById('fStatus').value = t.status;
           document.getElementById('fPriority').value = t.priority;
           document.getElementById('fDesc').value = t.desc || '';
@@ -5212,8 +5248,7 @@
           else if (t.multi === 'yes') { repeatType = 'multi'; repeatDays = t.totalDays || 7; }
           document.getElementById('fRepeat').value = repeatType;
           document.getElementById('fRepeatDays').value = repeatDays;
-          renderCal();
-          updateCrossDayPreview();
+          updateDateRangePreview();
           toggleRepeat();
           toggleModule();
         }
@@ -5222,18 +5257,16 @@
         document.getElementById('fName').value = '';
         document.getElementById('fModule').value = moduleMap[currentView] || 'work';
         var defaultDate = currentDate || dateToStr(new Date());
-        selectedDates = [defaultDate];
-        var d = strToDate(defaultDate);
-        calYear = d.getFullYear(); calMonth = d.getMonth();
-        setTimeVal('fStart', '09:30');
-        setTimeVal('fEnd', '19:00');
+        document.getElementById('fDateStart').value = defaultDate;
+        document.getElementById('fDateEnd').value = defaultDate;
+        document.getElementById('fStartTime').value = '09:30';
+        document.getElementById('fEndTime').value = '19:00';
         document.getElementById('fStatus').value = 'todo';
         document.getElementById('fPriority').value = 'medium';
         document.getElementById('fRepeat').value = 'no';
         document.getElementById('fRepeatDays').value = 7;
         document.getElementById('fDesc').value = '';
-        renderCal();
-        updateCrossDayPreview();
+        updateDateRangePreview();
         toggleRepeat();
         toggleModule();
       }
@@ -5286,12 +5319,13 @@
     function saveTask() {
       var name = document.getElementById('fName').value.trim();
       if (!name) { showToast('请输入任务名称', 'warn'); return; }
+      selectedDates = getSelectedDates();
       if (selectedDates.length === 0) { showToast('请至少选择一个日期', 'warn'); return; }
       var tasks = getTasks();
       var id = document.getElementById('fEditId').value;
       var repeatType = document.getElementById('fRepeat').value;
       var repeatDays = parseInt(document.getElementById('fRepeatDays').value) || 7;
-      var timeStr = getTimeVal('fStart') + ' - ' + getTimeVal('fEnd');
+      var timeStr = document.getElementById('fStartTime').value + ' - ' + document.getElementById('fEndTime').value;
       var module = document.getElementById('fModule').value;
       var status = document.getElementById('fStatus').value;
       var priority = document.getElementById('fPriority').value;
