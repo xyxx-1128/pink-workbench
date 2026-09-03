@@ -4226,7 +4226,7 @@
         renderDictHistory();
       }
 
-      var TIMEOUT = 5000;
+      var TIMEOUT = 2000;
 
       // 并行请求1: dictionaryapi.dev (原生CORS，英文释义+音标)
       var p1 = fetchWithTimeout('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(word), TIMEOUT)
