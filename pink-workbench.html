@@ -1019,6 +1019,7 @@
     .dict-word-row { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
     .dict-word { font-size: 1.6rem; font-weight: 800; color: var(--ink); line-height: 1.5; }
     .dict-phonetic { font-size: 0.9rem; color: var(--accent); font-weight: 600; }
+    .dict-phonetic-loading { font-size: 0.8rem; color: #999; font-style: italic; }
     .dict-play-btn { background: var(--accent-soft); border: none; border-radius: 50%; width: 34px; height: 34px; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
     .dict-play-btn:hover { background: var(--accent); }
     .dict-fav-btn { background: var(--bg2); border: 1px solid var(--rule); border-radius: 8px; padding: 0.3rem 0.7rem; font-size: 0.75rem; cursor: pointer; color: var(--ink); transition: all 0.15s; }
@@ -4197,33 +4198,50 @@
         ]);
       }
 
-      var collected = { phonetic: '', meanings: [], done: false, count: 0 };
+      var state = { phonetic: '', meanings: [], rendered: false, finished: 0, total: 5 };
 
-      function tryRender() {
-        if (collected.done || collected.count < 3) return;
-        collected.done = true;
-        if (collected.meanings.length === 0) {
-          collected.meanings = [{ pos: '提示', defs: ['查询超时，点击直达有道词典: https://dict.youdao.com/w/' + encodeURIComponent(word) + '" target="_blank'] }];
+      function doRender() {
+        if (state.meanings.length === 0) return;
+        if (!state.rendered) {
+          state.rendered = true;
+          recordHistory();
         }
-        var phonetic = collected.phonetic;
-        var meanings = collected.meanings;
+        var phonetic = state.phonetic;
         var meaningsHtml = '';
-        meanings.forEach(function(m) {
+        state.meanings.forEach(function(m) {
           meaningsHtml += '<div class="dict-meaning-item"><span class="dict-pos">' + (m.pos || '') + '</span><div class="dict-def">' + m.defs.join('<br>') + '</div></div>';
         });
-        dictCurrentWord = { word: word, phonetic: phonetic, audio: '', meanings: meanings };
+        dictCurrentWord = { word: word, phonetic: phonetic, audio: '', meanings: state.meanings };
         var isFav = dictFavs.some(function(f) { return f.word === word; });
         var html = '<div class="dict-card">'
           + '<div class="dict-word-row">'
           + '<span class="dict-word">' + word + '</span>'
-          + (phonetic ? '<span class="dict-phonetic">' + phonetic + '</span>' : '')
+          + (phonetic ? '<span class="dict-phonetic">' + phonetic + '</span>' : '<span class="dict-phonetic-loading">音标获取中...</span>')
           + '<button class="dict-play-btn" onclick="dictPlayYoudao(\'' + word.replace(/'/g, "\\'") + '\')">🔊</button>'
           + '<button class="dict-fav-btn' + (isFav ? ' faved' : '') + '" onclick="dictFav()">' + (isFav ? '✓ 已收藏' : '♡ 收藏') + '</button>'
           + '</div>'
           + '<div class="dict-meanings">' + meaningsHtml + '</div>'
           + '</div>';
         resultEl.innerHTML = html;
-        dictPlayYoudao(word);
+        if (!state._played) {
+          state._played = true;
+          dictPlayYoudao(word);
+        }
+      }
+
+      function updatePhonetic() {
+        if (!state.rendered || !state.phonetic) return;
+        var phEl = resultEl.querySelector('.dict-phonetic-loading');
+        if (phEl) {
+          var span = document.createElement('span');
+          span.className = 'dict-phonetic';
+          span.textContent = state.phonetic;
+          phEl.replaceWith(span);
+        }
+        if (dictCurrentWord) dictCurrentWord.phonetic = state.phonetic;
+      }
+
+      function recordHistory() {
         var hi = dictHistory.indexOf(word);
         if (hi >= 0) dictHistory.splice(hi, 1);
         dictHistory.unshift(word);
@@ -4232,101 +4250,164 @@
         renderDictHistory();
       }
 
-      // 2秒后强制渲染已有结果
-      setTimeout(function() {
-        collected.count = 3;
-        tryRender();
-      }, 2000);
+      function checkDone() { state.finished++; }
 
-      // 请求1: 有道词典 (中文释义+音标，最优先)
-      var youdaoUrl = 'https://dict.youdao.com/jsonapi?q=' + encodeURIComponent(word);
-      fetchWithTimeout('https://api.codetabs.com/v1/proxy/?quest=' + encodeURIComponent(youdaoUrl), 2000)
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-          if (data) {
-            if (data.simple && data.simple.word && data.simple.word.length > 0) {
-              var w = data.simple.word[0];
-              if (!collected.phonetic && (w.usphone || w.phone)) {
-                collected.phonetic = '/' + (w.usphone || w.phone) + '/';
-              }
-              if (w.trs) {
-                w.trs.forEach(function(t) {
-                  var tr = (typeof t === 'string') ? t : (t.tr || '');
-                  if (tr) {
-                    var posMatch = tr.match(/^(n|v|adj|adv|prep|conj|pron|int|num|vt|vi|aux|art)\.\s*/);
-                    var pos = posMatch ? posMatch[1] + '.' : '';
-                    var def = posMatch ? tr.substring(posMatch[0].length) : tr;
-                    collected.meanings.push({ pos: pos, defs: [def] });
-                  }
-                });
-              }
-            }
-            if (data.ec && data.ec.word && data.ec.word.length > 0) {
-              var ew = data.ec.word[0];
-              if (!collected.phonetic && ew.phone) collected.phonetic = '/' + ew.phone + '/';
-              if (collected.meanings.length === 0 && ew.trs) {
-                ew.trs.forEach(function(t) {
-                  var tr = (typeof t === 'string') ? t : (t.tr || '');
-                  if (tr) {
-                    var posMatch = tr.match(/^(n|v|adj|adv|prep|conj|pron|int|num|vt|vi|aux|art)\.\s*/);
-                    var pos = posMatch ? posMatch[1] + '.' : '';
-                    var def = posMatch ? tr.substring(posMatch[0].length) : tr;
-                    collected.meanings.push({ pos: pos, defs: [def] });
-                  }
-                });
-              }
-            }
-            if (collected.meanings.length === 0 && data.fanyi && data.fanyi.tran) {
-              collected.meanings.push({ pos: '翻译', defs: [data.fanyi.tran] });
-            }
-          }
-        }).catch(function() {})
-        .then(function() { collected.count++; tryRender(); });
-
-      // 请求2: dictionaryapi.dev (音标补充+英文释义)
-      fetchWithTimeout('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(word), 2000)
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-          if (Array.isArray(data) && data.length > 0) {
-            var entry = data[0];
-            if (!collected.phonetic) {
-              if (entry.phonetic) collected.phonetic = entry.phonetic;
-              else if (entry.phonetics && entry.phonetics.length) {
-                for (var i = 0; i < entry.phonetics.length; i++) {
-                  if (entry.phonetics[i].text) { collected.phonetic = entry.phonetics[i].text; break; }
-                }
-              }
-            }
-            if (entry.meanings && collected.meanings.length === 0) {
-              entry.meanings.forEach(function(m) {
-                var defs = [];
-                if (m.definitions) m.definitions.slice(0, 4).forEach(function(d) { defs.push(d.definition); });
-                if (defs.length) collected.meanings.push({ pos: m.partOfSpeech || '', defs: defs });
-              });
-            }
-          }
-        }).catch(function() {})
-        .then(function() { collected.count++; tryRender(); });
-
-      // 请求3: MyMemory翻译 (中文翻译补充)
+      // 请求1: MyMemory翻译 (原生CORS, 最快, 提供中文翻译)
       fetchWithTimeout('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(word) + '&langpair=en|zh-CN', 2000)
         .then(function(r) { return r.json(); })
         .then(function(data) {
           if (data && data.responseData && data.responseData.translatedText) {
             var tr = data.responseData.translatedText;
-            if (collected.meanings.length === 0) {
-              collected.meanings.push({ pos: '翻译', defs: [tr] });
+            if (state.meanings.length === 0) {
+              state.meanings.push({ pos: '翻译', defs: [tr] });
               if (data.matches) {
                 data.matches.slice(0, 3).forEach(function(m) {
                   if (m.translation && m.translation !== tr) {
-                    collected.meanings.push({ pos: '释义', defs: [m.translation] });
+                    state.meanings.push({ pos: '释义', defs: [m.translation] });
                   }
                 });
               }
+              doRender();
             }
           }
-        }).catch(function() {})
-        .then(function() { collected.count++; tryRender(); });
+        }).catch(function() {}).then(checkDone);
+
+      // 请求2: 有道词典 via codetabs (中文释义+音标)
+      var youdaoUrl = 'https://dict.youdao.com/jsonapi?q=' + encodeURIComponent(word);
+      fetchWithTimeout('https://api.codetabs.com/v1/proxy/?quest=' + encodeURIComponent(youdaoUrl), 4000)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data && data.simple && data.simple.word && data.simple.word.length > 0) {
+            var w = data.simple.word[0];
+            if (!state.phonetic && (w.usphone || w.phone)) {
+              state.phonetic = '/' + (w.usphone || w.phone) + '/';
+              updatePhonetic();
+            }
+            if (w.trs && w.trs.length > 0) {
+              var newMeanings = [];
+              w.trs.forEach(function(t) {
+                var tr = (typeof t === 'string') ? t : (t.tr || '');
+                if (tr) {
+                  var posMatch = tr.match(/^(n|v|adj|adv|prep|conj|pron|int|num|vt|vi|aux|art)\.\s*/);
+                  var pos = posMatch ? posMatch[1] + '.' : '';
+                  var def = posMatch ? tr.substring(posMatch[0].length) : tr;
+                  newMeanings.push({ pos: pos, defs: [def] });
+                }
+              });
+              if (newMeanings.length > 0) {
+                state.meanings = newMeanings;
+                doRender();
+              }
+            }
+          }
+          if (data && data.ec && data.ec.word && data.ec.word.length > 0) {
+            var ew = data.ec.word[0];
+            if (!state.phonetic && ew.phone) {
+              state.phonetic = '/' + ew.phone + '/';
+              updatePhonetic();
+            }
+            if (state.meanings.length <= 1 && ew.trs && ew.trs.length > 0) {
+              var newM = [];
+              ew.trs.forEach(function(t) {
+                var tr = (typeof t === 'string') ? t : (t.tr || '');
+                if (tr) {
+                  var posMatch = tr.match(/^(n|v|adj|adv|prep|conj|pron|int|num|vt|vi|aux|art)\.\s*/);
+                  var pos = posMatch ? posMatch[1] + '.' : '';
+                  var def = posMatch ? tr.substring(posMatch[0].length) : tr;
+                  newM.push({ pos: pos, defs: [def] });
+                }
+              });
+              if (newM.length > 0) {
+                state.meanings = newM;
+                doRender();
+              }
+            }
+          }
+        }).catch(function() {}).then(checkDone);
+
+      // 请求3: dictionaryapi.dev (音标+英文释义, 原生CORS)
+      fetchWithTimeout('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(word), 4000)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (Array.isArray(data) && data.length > 0) {
+            var entry = data[0];
+            if (!state.phonetic) {
+              if (entry.phonetic) state.phonetic = entry.phonetic;
+              else if (entry.phonetics && entry.phonetics.length) {
+                for (var i = 0; i < entry.phonetics.length; i++) {
+                  if (entry.phonetics[i].text) { state.phonetic = entry.phonetics[i].text; break; }
+                }
+              }
+              updatePhonetic();
+            }
+            if (state.meanings.length === 0 && entry.meanings) {
+              entry.meanings.forEach(function(m) {
+                var defs = [];
+                if (m.definitions) m.definitions.slice(0, 4).forEach(function(d) { defs.push(d.definition); });
+                if (defs.length) state.meanings.push({ pos: m.partOfSpeech || '', defs: defs });
+              });
+              doRender();
+            }
+          }
+        }).catch(function() {}).then(checkDone);
+
+      // 请求4: 有道词典 via allorigins代理 (备用获取音标)
+      fetchWithTimeout('https://api.allorigins.win/raw?url=' + encodeURIComponent(youdaoUrl), 4000)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data && data.simple && data.simple.word && data.simple.word.length > 0) {
+            var w = data.simple.word[0];
+            if (!state.phonetic && (w.usphone || w.phone)) {
+              state.phonetic = '/' + (w.usphone || w.phone) + '/';
+              updatePhonetic();
+            }
+          }
+          if (data && data.ec && data.ec.word && data.ec.word.length > 0) {
+            var ew = data.ec.word[0];
+            if (!state.phonetic && ew.phone) {
+              state.phonetic = '/' + ew.phone + '/';
+              updatePhonetic();
+            }
+          }
+        }).catch(function() {}).then(checkDone);
+
+      // 请求5: 有道词典 via corsproxy.io (备用获取音标)
+      fetchWithTimeout('https://corsproxy.io/?' + encodeURIComponent(youdaoUrl), 4000)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data && data.simple && data.simple.word && data.simple.word.length > 0) {
+            var w = data.simple.word[0];
+            if (!state.phonetic && (w.usphone || w.phone)) {
+              state.phonetic = '/' + (w.usphone || w.phone) + '/';
+              updatePhonetic();
+            }
+          }
+          if (data && data.ec && data.ec.word && data.ec.word.length > 0) {
+            var ew = data.ec.word[0];
+            if (!state.phonetic && ew.phone) {
+              state.phonetic = '/' + ew.phone + '/';
+              updatePhonetic();
+            }
+          }
+        }).catch(function() {}).then(checkDone);
+
+      // 5秒后如果还没有任何结果，显示超时提示
+      setTimeout(function() {
+        if (!state.rendered) {
+          state.rendered = true;
+          recordHistory();
+          var isFav = dictFavs.some(function(f) { return f.word === word; });
+          var html = '<div class="dict-card">'
+            + '<div class="dict-word-row">'
+            + '<span class="dict-word">' + word + '</span>'
+            + '<button class="dict-play-btn" onclick="dictPlayYoudao(\'' + word.replace(/'/g, "\\'") + '\')">🔊</button>'
+            + '<button class="dict-fav-btn' + (isFav ? ' faved' : '') + '" onclick="dictFav()">' + (isFav ? '✓ 已收藏' : '♡ 收藏') + '</button>'
+            + '</div>'
+            + '<div class="dict-meanings"><div class="dict-meaning-item"><span class="dict-pos">提示</span><div class="dict-def">查询超时，<a href="https://dict.youdao.com/w/' + encodeURIComponent(word) + '" target="_blank">点击直达有道词典</a></div></div></div>'
+            + '</div>';
+          resultEl.innerHTML = html;
+        }
+      }, 5000);
     }
 
     function dictPlay(url) {
