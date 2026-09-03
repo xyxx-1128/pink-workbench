@@ -4291,33 +4291,36 @@
       function parseYoudao(data) {
         var ph = '';
         var ms = [];
+        // 音标：simple.word[0].usphone
         if (data && data.simple && data.simple.word && data.simple.word.length > 0) {
           var w = data.simple.word[0];
           if (w.usphone) ph = '/' + w.usphone + '/';
-          else if (w.phone) ph = '/' + w.phone + '/';
-          if (w.trs) {
-            w.trs.forEach(function(t) {
-              var tr = (typeof t === 'string') ? t : (t.tr || '');
-              if (tr) {
-                var pm = tr.match(/^(n|v|adj|adv|prep|conj|pron|int|num|vt|vi|aux|art)\.\s*/);
-                ms.push({ pos: pm ? pm[1] + '.' : '', defs: [pm ? tr.substring(pm[0].length) : tr] });
-              }
-            });
-          }
+          else if (w.ukphone) ph = '/' + w.ukphone + '/';
         }
-        if (data && data.ec && data.ec.word && data.ec.word.length > 0) {
+        // 备用音标：ec.word[0].usphone
+        if (!ph && data && data.ec && data.ec.word && data.ec.word.length > 0) {
           var ew = data.ec.word[0];
-          if (!ph && ew.phone) ph = '/' + ew.phone + '/';
-          if (ms.length === 0 && ew.trs) {
-            ew.trs.forEach(function(t) {
-              var tr = (typeof t === 'string') ? t : (t.tr || '');
-              if (tr) {
-                var pm = tr.match(/^(n|v|adj|adv|prep|conj|pron|int|num|vt|vi|aux|art)\.\s*/);
-                ms.push({ pos: pm ? pm[1] + '.' : '', defs: [pm ? tr.substring(pm[0].length) : tr] });
-              }
-            });
-          }
+          if (ew.usphone) ph = '/' + ew.usphone + '/';
+          else if (ew.ukphone) ph = '/' + ew.ukphone + '/';
         }
+        // 备用音标：ee.word.phone
+        if (!ph && data && data.ee && data.ee.word && data.ee.word.phone) {
+          ph = '/' + data.ee.word.phone + '/';
+        }
+        // 中文释义：expand_ec.word[].transList[].trans + pos
+        if (data && data.expand_ec && data.expand_ec.word) {
+          data.expand_ec.word.forEach(function(w) {
+            var pos = w.pos || '';
+            if (w.transList) {
+              var defs = [];
+              w.transList.forEach(function(tl) {
+                if (tl.trans) defs.push(tl.trans);
+              });
+              if (defs.length) ms.push({ pos: pos, defs: defs });
+            }
+          });
+        }
+        // 备用：fanyi.tran
         if (ms.length === 0 && data && data.fanyi && data.fanyi.tran) {
           ms.push({ pos: '翻译', defs: [data.fanyi.tran] });
         }
