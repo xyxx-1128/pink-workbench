@@ -4336,48 +4336,87 @@
       script.onerror = function() { delete window[jsonpCb]; if (script.parentNode) script.remove(); };
       document.body.appendChild(script);
 
-      // 方案B: Datamuse API via CORS (获取音标, ARPABET转IPA)
-      function arpaToIpa(arpa) {
-        var map = {
-          'AA': 'ɑ', 'AE': 'æ', 'AH': 'ʌ', 'AO': 'ɔ', 'AW': 'aʊ', 'AY': 'aɪ',
-          'B': 'b', 'CH': 'tʃ', 'D': 'd', 'DH': 'ð', 'EH': 'ɛ', 'ER': 'ər',
-          'EY': 'eɪ', 'F': 'f', 'G': 'g', 'HH': 'h', 'IH': 'ɪ', 'IY': 'i',
-          'JH': 'dʒ', 'K': 'k', 'L': 'l', 'M': 'm', 'N': 'n', 'NG': 'ŋ',
-          'OW': 'oʊ', 'OY': 'ɔɪ', 'P': 'p', 'R': 'r', 'S': 's', 'SH': 'ʃ',
-          'T': 't', 'TH': 'θ', 'UH': 'ʊ', 'UW': 'u', 'V': 'v', 'W': 'w',
-          'Y': 'j', 'Z': 'z', 'ZH': 'ʒ'
-        };
-        var parts = arpa.trim().split(/\s+/);
-        var ipa = '';
-        var hasStress = false;
-        for (var i = 0; i < parts.length; i++) {
-          var p = parts[i];
-          var stress = '';
-          if (/\d$/.test(p)) {
-            var s = p.charAt(p.length - 1);
-            p = p.substring(0, p.length - 1);
-            if (s === '1') { stress = 'ˈ'; hasStress = true; }
-            else if (s === '2') { stress = 'ˌ'; hasStress = true; }
-          }
-          ipa += stress + (map[p] || p);
-        }
-        return '/' + ipa + '/';
-      }
-
-      fetchWithTimeout('https://api.datamuse.com/words?sp=' + encodeURIComponent(word) + '&md=r&max=1', 4000)
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-          if (Array.isArray(data) && data.length > 0 && data[0] && data[0].tags) {
-            for (var t = 0; t < data[0].tags.length; t++) {
-              if (data[0].tags[t].indexOf('pron:') === 0) {
-                var arpa = data[0].tags[t].substring(5);
-                phonetic = arpaToIpa(arpa);
-                break;
-              }
-            }
+      // 方案B: 有道fsearch API (获取标准音标+中文释义, XML格式)
+      fetchWithTimeout('https://dict.youdao.com/fsearch?q=' + encodeURIComponent(word), 5000)
+        .then(function(r) { return r.text(); })
+        .then(function(text) {
+          // 解析XML获取音标
+          var phMatch = text.match(/<phonetic-symbol><!\[CDATA\[([^\]]*)\]\]><\/phonetic-symbol>/);
+          if (phMatch && phMatch[1] && !phonetic) {
+            var raw = phMatch[1].trim();
+            // 有道音标格式: 'sə:və → /'sə:və/  转为标准IPA
+            phonetic = '/' + raw + '/';
             patchPhonetic();
           }
+          // 解析XML获取中文释义
+          if (!youdaoDone) {
+            var transMatches = text.match(/<content><!\[CDATA\[([^\]]*)\]\]><\/content>/g);
+            if (transMatches) {
+              var ms = [];
+              transMatches.forEach(function(m) {
+                var content = m.replace(/<content><!\[CDATA\[/, '').replace(/\]\]><\/content>/, '');
+                // 解析 "n. 服务器；服务生；发球者" 格式
+                var pm = content.match(/^(n|v|vt|vi|adj|adv|prep|conj|pron|int|num|aux|art|【名】)\.?\s*/);
+                var pos = pm ? pm[0].trim() : '';
+                var def = pm ? content.substring(pm[0].length) : content;
+                // 按；分割
+                var defs = def.split(/[；;]/).map(function(s) { return s.trim(); }).filter(function(s) { return s; });
+                if (defs.length) ms.push({ pos: pos, defs: defs });
+              });
+              if (ms.length > 0) {
+                if (!rendered) {
+                  meanings = ms;
+                  tryShow();
+                } else {
+                  upgradeResult(phonetic, ms);
+                }
+              }
+            }
+          }
         }).catch(function() {});
+
+      // 方案C: Datamuse API (备用获取音标)
+      if (!phonetic) {
+        function arpaToIpa(arpa) {
+          var map = {
+            'AA': 'ɑː', 'AE': 'æ', 'AH': 'ə', 'AO': 'ɔː', 'AW': 'aʊ', 'AY': 'aɪ',
+            'B': 'b', 'CH': 'tʃ', 'D': 'd', 'DH': 'ð', 'EH': 'e', 'ER': 'ər',
+            'EY': 'eɪ', 'F': 'f', 'G': 'g', 'HH': 'h', 'IH': 'ɪ', 'IY': 'iː',
+            'JH': 'dʒ', 'K': 'k', 'L': 'l', 'M': 'm', 'N': 'n', 'NG': 'ŋ',
+            'OW': 'oʊ', 'OY': 'ɔɪ', 'P': 'p', 'R': 'r', 'S': 's', 'SH': 'ʃ',
+            'T': 't', 'TH': 'θ', 'UH': 'ʊ', 'UW': 'uː', 'V': 'v', 'W': 'w',
+            'Y': 'j', 'Z': 'z', 'ZH': 'ʒ'
+          };
+          var parts = arpa.trim().split(/\s+/);
+          var ipa = '';
+          for (var i = 0; i < parts.length; i++) {
+            var p = parts[i];
+            var stress = '';
+            if (/\d$/.test(p)) {
+              var s = p.charAt(p.length - 1);
+              p = p.substring(0, p.length - 1);
+              if (s === '1') stress = 'ˈ';
+              else if (s === '2') stress = 'ˌ';
+            }
+            ipa += stress + (map[p] || p);
+          }
+          return '/' + ipa + '/';
+        }
+
+        fetchWithTimeout('https://api.datamuse.com/words?sp=' + encodeURIComponent(word) + '&md=r&max=1', 4000)
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            if (Array.isArray(data) && data.length > 0 && data[0] && data[0].tags) {
+              for (var t = 0; t < data[0].tags.length; t++) {
+                if (data[0].tags[t].indexOf('pron:') === 0) {
+                  phonetic = arpaToIpa(data[0].tags[t].substring(5));
+                  break;
+                }
+              }
+              patchPhonetic();
+            }
+          }).catch(function() {});
+      }
 
       // 方案C: MyMemory翻译 via CORS (备用，先出简单翻译)
       fetchWithTimeout('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(word) + '&langpair=en|zh-CN', 4000)
