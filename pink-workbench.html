@@ -4189,7 +4189,6 @@
       word = word.toLowerCase();
       var resultEl = document.getElementById('dictResult');
       resultEl.innerHTML = '<div class="dict-loading">🔍 查询中...</div>';
-      var done = false;
 
       function fetchWithTimeout(url, ms) {
         return Promise.race([
@@ -4198,9 +4197,16 @@
         ]);
       }
 
-      function renderResult(phonetic, meanings) {
-        if (done) return;
-        done = true;
+      var collected = { phonetic: '', meanings: [], done: false, count: 0 };
+
+      function tryRender() {
+        if (collected.done || collected.count < 3) return;
+        collected.done = true;
+        if (collected.meanings.length === 0) {
+          collected.meanings = [{ pos: '提示', defs: ['查询超时，点击直达有道词典: https://dict.youdao.com/w/' + encodeURIComponent(word) + '" target="_blank'] }];
+        }
+        var phonetic = collected.phonetic;
+        var meanings = collected.meanings;
         var meaningsHtml = '';
         meanings.forEach(function(m) {
           meaningsHtml += '<div class="dict-meaning-item"><span class="dict-pos">' + (m.pos || '') + '</span><div class="dict-def">' + m.defs.join('<br>') + '</div></div>';
@@ -4226,89 +4232,101 @@
         renderDictHistory();
       }
 
-      var TIMEOUT = 2000;
+      // 2秒后强制渲染已有结果
+      setTimeout(function() {
+        collected.count = 3;
+        tryRender();
+      }, 2000);
 
-      // 并行请求1: dictionaryapi.dev (原生CORS，英文释义+音标)
-      var p1 = fetchWithTimeout('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(word), TIMEOUT)
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-          if (!Array.isArray(data) || data.length === 0) throw new Error('empty');
-          var entry = data[0];
-          var phonetic = '';
-          if (entry.phonetic) phonetic = entry.phonetic;
-          else if (entry.phonetics && entry.phonetics.length) {
-            for (var i = 0; i < entry.phonetics.length; i++) {
-              if (entry.phonetics[i].text) { phonetic = entry.phonetics[i].text; break; }
-            }
-          }
-          var meanings = [];
-          if (entry.meanings) {
-            entry.meanings.forEach(function(m) {
-              var defs = [];
-              if (m.definitions) m.definitions.slice(0, 4).forEach(function(d) { defs.push(d.definition); });
-              meanings.push({ pos: m.partOfSpeech || '', defs: defs });
-            });
-          }
-          if (meanings.length === 0) throw new Error('no meanings');
-          renderResult(phonetic, meanings);
-        }).catch(function() {});
-
-      // 并行请求2: 有道词典 (通过codetabs代理，中文释义+音标)
+      // 请求1: 有道词典 (中文释义+音标，最优先)
       var youdaoUrl = 'https://dict.youdao.com/jsonapi?q=' + encodeURIComponent(word);
-      var p2 = fetchWithTimeout('https://api.codetabs.com/v1/proxy/?quest=' + encodeURIComponent(youdaoUrl), TIMEOUT)
+      fetchWithTimeout('https://api.codetabs.com/v1/proxy/?quest=' + encodeURIComponent(youdaoUrl), 2000)
         .then(function(r) { return r.json(); })
         .then(function(data) {
-          var phonetic = '';
-          var meanings = [];
-          if (data && data.simple && data.simple.word && data.simple.word.length > 0) {
-            var w = data.simple.word[0];
-            if (w.usphone) phonetic = '/' + w.usphone + '/';
-            else if (w.phone) phonetic = '/' + w.phone + '/';
-            if (w.trs) {
-              w.trs.forEach(function(t) {
-                meanings.push({ pos: '', defs: [t.tr || t] });
-              });
-            }
-          }
-          if (meanings.length === 0 && data && data.ec && data.ec.word && data.ec.word.length > 0) {
-            var ew = data.ec.word[0];
-            if (ew.phone) phonetic = '/' + ew.phone + '/';
-            if (ew.trs) {
-              ew.trs.forEach(function(t) {
-                meanings.push({ pos: '', defs: [t.tr || t] });
-              });
-            }
-          }
-          if (meanings.length === 0 && data && data.fanyi && data.fanyi.tran) {
-            meanings.push({ pos: '翻译', defs: [data.fanyi.tran] });
-          }
-          if (meanings.length === 0) throw new Error('youdao empty');
-          renderResult(phonetic, meanings);
-        }).catch(function() {});
-
-      // 并行请求3: MyMemory翻译 (原生CORS，中文翻译)
-      var p3 = fetchWithTimeout('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(word) + '&langpair=en|zh-CN', TIMEOUT)
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-          if (!data || !data.responseData || !data.responseData.translatedText) throw new Error('mm empty');
-          var tr = data.responseData.translatedText;
-          var meanings = [{ pos: '翻译', defs: [tr] }];
-          if (data.matches) {
-            data.matches.slice(0, 3).forEach(function(m) {
-              if (m.translation && m.translation !== tr) {
-                meanings.push({ pos: '释义', defs: [m.translation] });
+          if (data) {
+            if (data.simple && data.simple.word && data.simple.word.length > 0) {
+              var w = data.simple.word[0];
+              if (!collected.phonetic && (w.usphone || w.phone)) {
+                collected.phonetic = '/' + (w.usphone || w.phone) + '/';
               }
-            });
+              if (w.trs) {
+                w.trs.forEach(function(t) {
+                  var tr = (typeof t === 'string') ? t : (t.tr || '');
+                  if (tr) {
+                    var posMatch = tr.match(/^(n|v|adj|adv|prep|conj|pron|int|num|vt|vi|aux|art)\.\s*/);
+                    var pos = posMatch ? posMatch[1] + '.' : '';
+                    var def = posMatch ? tr.substring(posMatch[0].length) : tr;
+                    collected.meanings.push({ pos: pos, defs: [def] });
+                  }
+                });
+              }
+            }
+            if (data.ec && data.ec.word && data.ec.word.length > 0) {
+              var ew = data.ec.word[0];
+              if (!collected.phonetic && ew.phone) collected.phonetic = '/' + ew.phone + '/';
+              if (collected.meanings.length === 0 && ew.trs) {
+                ew.trs.forEach(function(t) {
+                  var tr = (typeof t === 'string') ? t : (t.tr || '');
+                  if (tr) {
+                    var posMatch = tr.match(/^(n|v|adj|adv|prep|conj|pron|int|num|vt|vi|aux|art)\.\s*/);
+                    var pos = posMatch ? posMatch[1] + '.' : '';
+                    var def = posMatch ? tr.substring(posMatch[0].length) : tr;
+                    collected.meanings.push({ pos: pos, defs: [def] });
+                  }
+                });
+              }
+            }
+            if (collected.meanings.length === 0 && data.fanyi && data.fanyi.tran) {
+              collected.meanings.push({ pos: '翻译', defs: [data.fanyi.tran] });
+            }
           }
-          renderResult('', meanings);
-        }).catch(function() {});
+        }).catch(function() {})
+        .then(function() { collected.count++; tryRender(); });
 
-      // 全部失败后显示提示
-      Promise.all([p1, p2, p3]).then(function() {
-        if (!done) {
-          renderResult('', [{ pos: '提示', defs: ['查询超时，点击直达有道词典: https://dict.youdao.com/w/' + encodeURIComponent(word) + '" target="_blank'] }]);
-        }
-      });
+      // 请求2: dictionaryapi.dev (音标补充+英文释义)
+      fetchWithTimeout('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(word), 2000)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (Array.isArray(data) && data.length > 0) {
+            var entry = data[0];
+            if (!collected.phonetic) {
+              if (entry.phonetic) collected.phonetic = entry.phonetic;
+              else if (entry.phonetics && entry.phonetics.length) {
+                for (var i = 0; i < entry.phonetics.length; i++) {
+                  if (entry.phonetics[i].text) { collected.phonetic = entry.phonetics[i].text; break; }
+                }
+              }
+            }
+            if (entry.meanings && collected.meanings.length === 0) {
+              entry.meanings.forEach(function(m) {
+                var defs = [];
+                if (m.definitions) m.definitions.slice(0, 4).forEach(function(d) { defs.push(d.definition); });
+                if (defs.length) collected.meanings.push({ pos: m.partOfSpeech || '', defs: defs });
+              });
+            }
+          }
+        }).catch(function() {})
+        .then(function() { collected.count++; tryRender(); });
+
+      // 请求3: MyMemory翻译 (中文翻译补充)
+      fetchWithTimeout('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(word) + '&langpair=en|zh-CN', 2000)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data && data.responseData && data.responseData.translatedText) {
+            var tr = data.responseData.translatedText;
+            if (collected.meanings.length === 0) {
+              collected.meanings.push({ pos: '翻译', defs: [tr] });
+              if (data.matches) {
+                data.matches.slice(0, 3).forEach(function(m) {
+                  if (m.translation && m.translation !== tr) {
+                    collected.meanings.push({ pos: '释义', defs: [m.translation] });
+                  }
+                });
+              }
+            }
+          }
+        }).catch(function() {})
+        .then(function() { collected.count++; tryRender(); });
     }
 
     function dictPlay(url) {
