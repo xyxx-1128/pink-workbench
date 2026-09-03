@@ -4242,7 +4242,7 @@
         }
       }
 
-      // 2. 非本地词，走API
+      // 2. 非本地词，走API — 目标：获取音标+多个中文释义
       function fetchWithTimeout(url, ms) {
         return Promise.race([
           fetch(url),
@@ -4254,11 +4254,23 @@
       var phonetic = '';
       var meanings = [];
       var rendered = false;
+      var youdaoDone = false;
 
       function tryShow() {
         if (rendered || meanings.length === 0) return;
         rendered = true;
         showResult(phonetic, meanings);
+      }
+
+      // 有道数据返回后，升级显示（替换之前的简单翻译结果）
+      function upgradeWithYoudao(yPhonetic, yMeanings) {
+        if (yMeanings.length === 0) return;
+        phonetic = yPhonetic;
+        meanings = yMeanings;
+        youdaoDone = true;
+        // 重新渲染完整结果
+        rendered = false;
+        tryShow();
       }
 
       function patchPhonetic() {
@@ -4276,59 +4288,92 @@
         }
       }
 
-      // 有道词典 via codetabs代理 (中文释义+音标)
-      fetchWithTimeout('https://api.codetabs.com/v1/proxy/?quest=' + encodeURIComponent(youdaoUrl), 3000)
+      function parseYoudao(data) {
+        var ph = '';
+        var ms = [];
+        if (data && data.simple && data.simple.word && data.simple.word.length > 0) {
+          var w = data.simple.word[0];
+          if (w.usphone) ph = '/' + w.usphone + '/';
+          else if (w.phone) ph = '/' + w.phone + '/';
+          if (w.trs) {
+            w.trs.forEach(function(t) {
+              var tr = (typeof t === 'string') ? t : (t.tr || '');
+              if (tr) {
+                var pm = tr.match(/^(n|v|adj|adv|prep|conj|pron|int|num|vt|vi|aux|art)\.\s*/);
+                ms.push({ pos: pm ? pm[1] + '.' : '', defs: [pm ? tr.substring(pm[0].length) : tr] });
+              }
+            });
+          }
+        }
+        if (data && data.ec && data.ec.word && data.ec.word.length > 0) {
+          var ew = data.ec.word[0];
+          if (!ph && ew.phone) ph = '/' + ew.phone + '/';
+          if (ms.length === 0 && ew.trs) {
+            ew.trs.forEach(function(t) {
+              var tr = (typeof t === 'string') ? t : (t.tr || '');
+              if (tr) {
+                var pm = tr.match(/^(n|v|adj|adv|prep|conj|pron|int|num|vt|vi|aux|art)\.\s*/);
+                ms.push({ pos: pm ? pm[1] + '.' : '', defs: [pm ? tr.substring(pm[0].length) : tr] });
+              }
+            });
+          }
+        }
+        if (ms.length === 0 && data && data.fanyi && data.fanyi.tran) {
+          ms.push({ pos: '翻译', defs: [data.fanyi.tran] });
+        }
+        return { phonetic: ph, meanings: ms };
+      }
+
+      // 有道词典 via codetabs代理 (主力：音标+多中文释义)
+      fetchWithTimeout('https://api.codetabs.com/v1/proxy/?quest=' + encodeURIComponent(youdaoUrl), 6000)
         .then(function(r) { return r.json(); })
         .then(function(data) {
-          if (data && data.simple && data.simple.word && data.simple.word.length > 0) {
-            var w = data.simple.word[0];
-            if (w.usphone) phonetic = '/' + w.usphone + '/';
-            else if (w.phone) phonetic = '/' + w.phone + '/';
-            if (w.trs) {
-              w.trs.forEach(function(t) {
-                var tr = (typeof t === 'string') ? t : (t.tr || '');
-                if (tr) {
-                  var pm = tr.match(/^(n|v|adj|adv|prep|conj|pron|int|num|vt|vi|aux|art)\.\s*/);
-                  meanings.push({ pos: pm ? pm[1] + '.' : '', defs: [pm ? tr.substring(pm[0].length) : tr] });
-                }
-              });
+          var result = parseYoudao(data);
+          if (result.meanings.length > 0) {
+            if (!rendered) {
+              phonetic = result.phonetic;
+              meanings = result.meanings;
+              tryShow();
+            } else {
+              upgradeWithYoudao(result.phonetic, result.meanings);
             }
+            patchPhonetic();
           }
-          if (data && data.ec && data.ec.word && data.ec.word.length > 0) {
-            var ew = data.ec.word[0];
-            if (!phonetic && ew.phone) phonetic = '/' + ew.phone + '/';
-            if (meanings.length === 0 && ew.trs) {
-              ew.trs.forEach(function(t) {
-                var tr = (typeof t === 'string') ? t : (t.tr || '');
-                if (tr) {
-                  var pm = tr.match(/^(n|v|adj|adv|prep|conj|pron|int|num|vt|vi|aux|art)\.\s*/);
-                  meanings.push({ pos: pm ? pm[1] + '.' : '', defs: [pm ? tr.substring(pm[0].length) : tr] });
-                }
-              });
-            }
-          }
-          if (meanings.length === 0 && data && data.fanyi && data.fanyi.tran) {
-            meanings.push({ pos: '翻译', defs: [data.fanyi.tran] });
-          }
-          tryShow();
-          patchPhonetic();
         }).catch(function() {});
 
-      // MyMemory翻译 (原生CORS, 备用释义)
+      // 有道词典 via allorigins代理 (备用代理)
+      fetchWithTimeout('https://api.allorigins.win/raw?url=' + encodeURIComponent(youdaoUrl), 6000)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (youdaoDone) return;
+          var result = parseYoudao(data);
+          if (result.meanings.length > 0) {
+            if (!rendered) {
+              phonetic = result.phonetic;
+              meanings = result.meanings;
+              tryShow();
+            } else {
+              upgradeWithYoudao(result.phonetic, result.meanings);
+            }
+            patchPhonetic();
+          }
+        }).catch(function() {});
+
+      // MyMemory翻译 (原生CORS, 最快出结果, 先显示简单翻译)
       fetchWithTimeout('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(word) + '&langpair=en|zh-CN', 3000)
         .then(function(r) { return r.json(); })
         .then(function(data) {
           if (data && data.responseData && data.responseData.translatedText) {
             var tr = data.responseData.translatedText;
-            if (meanings.length === 0) {
+            if (meanings.length === 0 && !youdaoDone) {
               meanings.push({ pos: '翻译', defs: [tr] });
               tryShow();
             }
           }
         }).catch(function() {});
 
-      // dictionaryapi.dev (音标+英文释义, 原生CORS)
-      fetchWithTimeout('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(word), 3000)
+      // dictionaryapi.dev (音标补充, 原生CORS)
+      fetchWithTimeout('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(word), 4000)
         .then(function(r) { return r.json(); })
         .then(function(data) {
           if (Array.isArray(data) && data.length > 0 && data[0]) {
@@ -4340,24 +4385,14 @@
                 }
               }
             }
-            if (meanings.length === 0 && data[0].meanings) {
-              data[0].meanings.forEach(function(m) {
-                var defs = [];
-                if (m.definitions) m.definitions.slice(0, 4).forEach(function(d) { defs.push(d.definition); });
-                if (defs.length) meanings.push({ pos: m.partOfSpeech || '', defs: defs });
-              });
-            }
-            if (!rendered && meanings.length > 0) {
-              tryShow();
-            }
             patchPhonetic();
           }
         }).catch(function() {});
 
-      // 4秒后超时提示
+      // 7秒后超时提示
       setTimeout(function() {
         if (!rendered) showError();
-      }, 4000);
+      }, 7000);
     }
 
     function dictPlay(url) {
