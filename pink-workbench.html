@@ -4336,30 +4336,43 @@
       script.onerror = function() { delete window[jsonpCb]; if (script.parentNode) script.remove(); };
       document.body.appendChild(script);
 
-      // 方案B: dictionaryapi.dev via CORS (获取音标)
-      fetchWithTimeout('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(word), 5000)
+      // 方案B: Datamuse API via CORS (获取音标, ARPABET转IPA)
+      function arpaToIpa(arpa) {
+        var map = {
+          'AA': 'ɑ', 'AE': 'æ', 'AH': 'ʌ', 'AO': 'ɔ', 'AW': 'aʊ', 'AY': 'aɪ',
+          'B': 'b', 'CH': 'tʃ', 'D': 'd', 'DH': 'ð', 'EH': 'ɛ', 'ER': 'ər',
+          'EY': 'eɪ', 'F': 'f', 'G': 'g', 'HH': 'h', 'IH': 'ɪ', 'IY': 'i',
+          'JH': 'dʒ', 'K': 'k', 'L': 'l', 'M': 'm', 'N': 'n', 'NG': 'ŋ',
+          'OW': 'oʊ', 'OY': 'ɔɪ', 'P': 'p', 'R': 'r', 'S': 's', 'SH': 'ʃ',
+          'T': 't', 'TH': 'θ', 'UH': 'ʊ', 'UW': 'u', 'V': 'v', 'W': 'w',
+          'Y': 'j', 'Z': 'z', 'ZH': 'ʒ'
+        };
+        var parts = arpa.trim().split(/\s+/);
+        var ipa = '';
+        var hasStress = false;
+        for (var i = 0; i < parts.length; i++) {
+          var p = parts[i];
+          var stress = '';
+          if (/\d$/.test(p)) {
+            var s = p.charAt(p.length - 1);
+            p = p.substring(0, p.length - 1);
+            if (s === '1') { stress = 'ˈ'; hasStress = true; }
+            else if (s === '2') { stress = 'ˌ'; hasStress = true; }
+          }
+          ipa += stress + (map[p] || p);
+        }
+        return '/' + ipa + '/';
+      }
+
+      fetchWithTimeout('https://api.datamuse.com/words?sp=' + encodeURIComponent(word) + '&md=r&max=1', 4000)
         .then(function(r) { return r.json(); })
         .then(function(data) {
-          if (Array.isArray(data) && data.length > 0 && data[0]) {
-            if (!phonetic) {
-              if (data[0].phonetic) phonetic = data[0].phonetic;
-              else if (data[0].phonetics) {
-                for (var j = 0; j < data[0].phonetics.length; j++) {
-                  if (data[0].phonetics[j].text) { phonetic = data[0].phonetics[j].text; break; }
-                }
-              }
-            }
-            // 如果有道还没返回，先用英文释义兜底
-            if (meanings.length === 0 && data[0].meanings) {
-              var enMeanings = [];
-              data[0].meanings.forEach(function(m) {
-                var defs = [];
-                if (m.definitions) m.definitions.slice(0, 3).forEach(function(d) { defs.push(d.definition); });
-                if (defs.length) enMeanings.push({ pos: m.partOfSpeech || '', defs: defs });
-              });
-              if (enMeanings.length > 0 && !youdaoDone) {
-                meanings = enMeanings;
-                tryShow();
+          if (Array.isArray(data) && data.length > 0 && data[0] && data[0].tags) {
+            for (var t = 0; t < data[0].tags.length; t++) {
+              if (data[0].tags[t].indexOf('pron:') === 0) {
+                var arpa = data[0].tags[t].substring(5);
+                phonetic = arpaToIpa(arpa);
+                break;
               }
             }
             patchPhonetic();
