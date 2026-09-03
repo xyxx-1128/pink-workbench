@@ -3122,17 +3122,17 @@
       document.querySelectorAll('.mnav-item').forEach(function(item) {
         item.classList.toggle('active', item.dataset.view === view);
       });
-      // 控制悬浮按钮：所有页面都显示（手机端）
+      // 控制悬浮按钮：仅手机端显示
       var fab = document.querySelector('.mobile-fab');
       if (fab) {
-        fab.style.display = 'flex';
+        fab.style.display = window.innerWidth <= 768 ? 'flex' : 'none';
       }
       // 控制"回到今天"按钮：仅主页和工作页显示
       var btnToday = document.getElementById('btnScrollToday');
       if (btnToday) btnToday.style.display = (view === 'home' || view === 'work') ? '' : 'none';
-      // 控制"添加任务"按钮：语录和备忘录页隐藏（有独立的添加按钮）
+      // 控制"添加任务"按钮：仅在需要任务管理的页面显示
       var btnAdd = document.getElementById('btnAddTask');
-      if (btnAdd) btnAdd.style.display = (view === 'quote' || view === 'diary' || view === 'wellness' || view === 'period' || view === 'stock') ? 'none' : '';
+      if (btnAdd) btnAdd.style.display = (view === 'home' || view === 'work' || view === 'media') ? '' : 'none';
       if (window.innerWidth <= 768) closeDrawer();
       window.scrollTo(0, 0);
       if (view === 'home') renderHome();
