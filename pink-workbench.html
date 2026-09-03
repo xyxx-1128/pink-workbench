@@ -4261,7 +4261,22 @@
         showResult(phonetic, meanings);
       }
 
-      // 有道词典 via codetabs代理
+      function patchPhonetic() {
+        if (!phonetic) return;
+        if (dictCurrentWord) dictCurrentWord.phonetic = phonetic;
+        var phEl = resultEl.querySelector('.dict-phonetic');
+        if (!phEl) {
+          var wordRow = resultEl.querySelector('.dict-word-row');
+          if (wordRow) {
+            var span = document.createElement('span');
+            span.className = 'dict-phonetic';
+            span.textContent = phonetic;
+            wordRow.insertBefore(span, wordRow.children[1]);
+          }
+        }
+      }
+
+      // 有道词典 via codetabs代理 (中文释义+音标)
       fetchWithTimeout('https://api.codetabs.com/v1/proxy/?quest=' + encodeURIComponent(youdaoUrl), 3000)
         .then(function(r) { return r.json(); })
         .then(function(data) {
@@ -4296,9 +4311,10 @@
             meanings.push({ pos: '翻译', defs: [data.fanyi.tran] });
           }
           tryShow();
+          patchPhonetic();
         }).catch(function() {});
 
-      // MyMemory翻译 (原生CORS, 备用)
+      // MyMemory翻译 (原生CORS, 备用释义)
       fetchWithTimeout('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(word) + '&langpair=en|zh-CN', 3000)
         .then(function(r) { return r.json(); })
         .then(function(data) {
@@ -4311,7 +4327,7 @@
           }
         }).catch(function() {});
 
-      // dictionaryapi.dev (音标补充, 原生CORS)
+      // dictionaryapi.dev (音标+英文释义, 原生CORS)
       fetchWithTimeout('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(word), 3000)
         .then(function(r) { return r.json(); })
         .then(function(data) {
@@ -4333,19 +4349,8 @@
             }
             if (!rendered && meanings.length > 0) {
               tryShow();
-            } else if (rendered && phonetic) {
-              var phEl = resultEl.querySelector('.dict-phonetic');
-              if (!phEl) {
-                var wordRow = resultEl.querySelector('.dict-word-row');
-                if (wordRow) {
-                  var span = document.createElement('span');
-                  span.className = 'dict-phonetic';
-                  span.textContent = phonetic;
-                  wordRow.insertBefore(span, wordRow.children[1]);
-                }
-              }
-              if (dictCurrentWord) dictCurrentWord.phonetic = phonetic;
             }
+            patchPhonetic();
           }
         }).catch(function() {});
 
