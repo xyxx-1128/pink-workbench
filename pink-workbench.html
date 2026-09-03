@@ -4190,68 +4190,169 @@
       var resultEl = document.getElementById('dictResult');
       resultEl.innerHTML = '<div class="dict-loading">🔍 查询中...</div>';
 
-      var apiUrl = 'https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(word);
-      fetch(apiUrl)
+      function fetchWithTimeout(url, ms) {
+        return Promise.race([
+          fetch(url),
+          new Promise(function(_, reject) { setTimeout(function() { reject(new Error('timeout')); }, ms); })
+        ]);
+      }
+
+      function renderResult(phonetic, meanings) {
+        var meaningsHtml = '';
+        meanings.forEach(function(m) {
+          meaningsHtml += '<div class="dict-meaning-item"><span class="dict-pos">' + (m.pos || '') + '</span><div class="dict-def">' + m.defs.join('<br>') + '</div></div>';
+        });
+        dictCurrentWord = { word: word, phonetic: phonetic, audio: '', meanings: meanings };
+        var isFav = dictFavs.some(function(f) { return f.word === word; });
+        var html = '<div class="dict-card">'
+          + '<div class="dict-word-row">'
+          + '<span class="dict-word">' + word + '</span>'
+          + (phonetic ? '<span class="dict-phonetic">' + phonetic + '</span>' : '')
+          + '<button class="dict-play-btn" onclick="dictPlayYoudao(\'' + word.replace(/'/g, "\\'") + '\')">🔊</button>'
+          + '<button class="dict-fav-btn' + (isFav ? ' faved' : '') + '" onclick="dictFav()">' + (isFav ? '✓ 已收藏' : '♡ 收藏') + '</button>'
+          + '</div>'
+          + '<div class="dict-meanings">' + meaningsHtml + '</div>'
+          + '</div>';
+        resultEl.innerHTML = html;
+        dictPlayYoudao(word);
+        var hi = dictHistory.indexOf(word);
+        if (hi >= 0) dictHistory.splice(hi, 1);
+        dictHistory.unshift(word);
+        if (dictHistory.length > 20) dictHistory = dictHistory.slice(0, 20);
+        save('dict_history', dictHistory);
+        renderDictHistory();
+      }
+
+      // 方案1: codetabs代理 + dictionaryapi.dev
+      var dictApiUrl = 'https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(word);
+      var proxy1 = 'https://api.codetabs.com/v1/proxy/?quest=' + encodeURIComponent(dictApiUrl);
+
+      // 方案2: MyMemory翻译API（原生CORS，无需代理）
+      var mmUrl = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(word) + '&langpair=en|zh-CN';
+
+      // 方案3: 有道词典网页接口
+      var youdaoUrl = 'https://dict.youdao.com/jsonapi?q=' + encodeURIComponent(word);
+      var proxy3 = 'https://api.codetabs.com/v1/proxy/?quest=' + encodeURIComponent(youdaoUrl);
+
+      // 先试 MyMemory（直连，最可靠）
+      fetchWithTimeout(mmUrl, 8000)
         .then(function(r) { return r.json(); })
         .then(function(data) {
-          if (!Array.isArray(data) || data.length === 0) {
-            resultEl.innerHTML = '<div class="dict-error">未找到"' + word + '"，请检查拼写</div>';
-            return;
-          }
-          var entry = data[0];
-          var phonetic = '';
-          if (entry.phonetic) phonetic = entry.phonetic;
-          else if (entry.phonetics && entry.phonetics.length) {
-            for (var i = 0; i < entry.phonetics.length; i++) {
-              if (entry.phonetics[i].text) { phonetic = entry.phonetics[i].text; break; }
+          if (data && data.responseData && data.responseData.translatedText) {
+            var tr = data.responseData.translatedText;
+            var meanings = [{ pos: '翻译', defs: [tr] }];
+            if (data.matches) {
+              data.matches.slice(0, 4).forEach(function(m) {
+                if (m.translation && m.translation !== tr) {
+                  meanings.push({ pos: '释义', defs: [m.translation] });
+                }
+              });
             }
+            // 尝试同时获取音标
+            fetchWithTimeout(proxy1, 6000)
+              .then(function(r) { return r.json(); })
+              .then(function(d) {
+                var ph = '';
+                if (Array.isArray(d) && d[0] && d[0].phonetic) ph = d[0].phonetic;
+                else if (Array.isArray(d) && d[0] && d[0].phonetics) {
+                  for (var i = 0; i < d[0].phonetics.length; i++) {
+                    if (d[0].phonetics[i].text) { ph = d[0].phonetics[i].text; break; }
+                  }
+                }
+                if (Array.isArray(d) && d[0] && d[0].meanings) {
+                  meanings = [];
+                  d[0].meanings.forEach(function(m) {
+                    var defs = [];
+                    if (m.definitions) m.definitions.slice(0, 4).forEach(function(dd) { defs.push(dd.definition); });
+                    meanings.push({ pos: m.partOfSpeech || '', defs: defs });
+                  });
+                }
+                renderResult(ph, meanings);
+              })
+              .catch(function() {
+                renderResult('', meanings);
+              });
+          } else {
+            throw new Error('mymemory empty');
           }
-          var audioUrl = '';
-          if (entry.phonetics && entry.phonetics.length) {
-            for (var i = 0; i < entry.phonetics.length; i++) {
-              if (entry.phonetics[i].audio) { audioUrl = entry.phonetics[i].audio; break; }
-            }
-          }
-          var meaningsHtml = '';
-          if (entry.meanings) {
-            entry.meanings.forEach(function(m) {
-              var pos = m.partOfSpeech || '';
-              var defs = [];
-              if (m.definitions) {
-                m.definitions.slice(0, 5).forEach(function(d) {
-                  defs.push(d.definition);
-                });
-              }
-              meaningsHtml += '<div class="dict-meaning-item"><span class="dict-pos">' + pos + '</span><div class="dict-def">' + defs.join('<br>') + '</div></div>';
-            });
-          }
-          dictCurrentWord = { word: word, phonetic: phonetic, audio: audioUrl, meanings: entry.meanings || [] };
-          var isFav = dictFavs.some(function(f) { return f.word === word; });
-          var html = '<div class="dict-card">'
-            + '<div class="dict-word-row">'
-            + '<span class="dict-word">' + word + '</span>'
-            + (phonetic ? '<span class="dict-phonetic">' + phonetic + '</span>' : '')
-            + (audioUrl ? '<button class="dict-play-btn" onclick="dictPlay(\'' + audioUrl.replace(/'/g, "\\'") + '\')">🔊</button>' : '')
-            + '<button class="dict-fav-btn' + (isFav ? ' faved' : '') + '" onclick="dictFav()">' + (isFav ? '✓ 已收藏' : '♡ 收藏') + '</button>'
-            + '</div>'
-            + '<div class="dict-meanings">' + meaningsHtml + '</div>'
-            + '</div>';
-          resultEl.innerHTML = html;
-          if (audioUrl) dictPlay(audioUrl);
-          var hi = dictHistory.indexOf(word);
-          if (hi >= 0) dictHistory.splice(hi, 1);
-          dictHistory.unshift(word);
-          if (dictHistory.length > 20) dictHistory = dictHistory.slice(0, 20);
-          save('dict_history', dictHistory);
-          renderDictHistory();
         })
         .catch(function() {
-          resultEl.innerHTML = '<div class="dict-error">查询失败，请稍后重试</div>';
+          // 方案2失败，试 codetabs代理 + dictionaryapi.dev
+          resultEl.innerHTML = '<div class="dict-loading">🔄 尝试其他数据源...</div>';
+          fetchWithTimeout(proxy1, 8000)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+              if (!Array.isArray(data) || data.length === 0) throw new Error('not found');
+              var entry = data[0];
+              var phonetic = '';
+              if (entry.phonetic) phonetic = entry.phonetic;
+              else if (entry.phonetics && entry.phonetics.length) {
+                for (var i = 0; i < entry.phonetics.length; i++) {
+                  if (entry.phonetics[i].text) { phonetic = entry.phonetics[i].text; break; }
+                }
+              }
+              var meanings = [];
+              if (entry.meanings) {
+                entry.meanings.forEach(function(m) {
+                  var defs = [];
+                  if (m.definitions) m.definitions.slice(0, 5).forEach(function(d) { defs.push(d.definition); });
+                  meanings.push({ pos: m.partOfSpeech || '', defs: defs });
+                });
+              }
+              if (meanings.length === 0) throw new Error('no meanings');
+              renderResult(phonetic, meanings);
+            })
+            .catch(function() {
+              // 方案3: 有道词典
+              resultEl.innerHTML = '<div class="dict-loading">🔄 尝试有道词典...</div>';
+              fetchWithTimeout(proxy3, 8000)
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                  var phonetic = '';
+                  var meanings = [];
+                  if (data && data.simple && data.simple.word && data.simple.word.length > 0) {
+                    var w = data.simple.word[0];
+                    if (w.usphone) phonetic = '/' + w.usphone + '/';
+                    else if (w.phone) phonetic = '/' + w.phone + '/';
+                    if (w.trs) {
+                      w.trs.forEach(function(t) {
+                        meanings.push({ pos: '', defs: [t.tr || t] });
+                      });
+                    }
+                  }
+                  if (meanings.length === 0 && data && data.ec && data.ec.word && data.ec.word.length > 0) {
+                    var ew = data.ec.word[0];
+                    if (ew.phone) phonetic = '/' + ew.phone + '/';
+                    if (ew.trs) {
+                      ew.trs.forEach(function(t) {
+                        meanings.push({ pos: '', defs: [t.tr || t] });
+                      });
+                    }
+                  }
+                  if (meanings.length === 0 && data && data.fanyi && data.fanyi.tran) {
+                    meanings.push({ pos: '翻译', defs: [data.fanyi.tran] });
+                  }
+                  if (meanings.length === 0) throw new Error('all failed');
+                  renderResult(phonetic, meanings);
+                })
+                .catch(function() {
+                  renderResult('', [{ pos: '提示', defs: ['查询超时，点击直达有道词典: https://dict.youdao.com/w/' + encodeURIComponent(word) + '" target="_blank'] }]);
+                });
+            });
         });
     }
 
     function dictPlay(url) {
       try { new Audio(url).play(); } catch(e) {}
+    }
+
+    function dictPlayYoudao(word) {
+      var audio = new Audio('https://dict.youdao.com/dictvoice?audio=' + encodeURIComponent(word) + '&type=2');
+      audio.play().catch(function() {
+        try {
+          new Audio('https://dict.youdao.com/dictvoice?audio=' + encodeURIComponent(word) + '&type=1').play();
+        } catch(e2) {}
+      });
     }
 
     function dictFav() {
