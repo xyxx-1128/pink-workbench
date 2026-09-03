@@ -4191,6 +4191,12 @@
       var resultEl = document.getElementById('dictResult');
       resultEl.innerHTML = '<div class="dict-loading">🔍 查询中...</div>';
 
+      // 先查本地CET4词库，秒出音标+释义
+      var localEntry = null;
+      for (var i = 0; i < CET4_WORDS.length; i++) {
+        if (CET4_WORDS[i].word === word) { localEntry = CET4_WORDS[i]; break; }
+      }
+
       function fetchWithTimeout(url, ms) {
         return Promise.race([
           fetch(url),
@@ -4199,6 +4205,15 @@
       }
 
       var state = { phonetic: '', meanings: [], rendered: false, finished: 0, total: 5 };
+
+      // 本地词库命中，直接用
+      if (localEntry) {
+        var posMatch = localEntry.meaning.match(/^(n|v|vt|vi|adj|adv|prep|conj|pron|int|num|aux|art)\.\s*/);
+        var pos = posMatch ? posMatch[1] + '.' : '';
+        var def = posMatch ? localEntry.meaning.substring(posMatch[0].length) : localEntry.meaning;
+        state.phonetic = localEntry.phonetic;
+        state.meanings = [{ pos: pos, defs: def.split('；') }];
+      }
 
       function doRender() {
         if (state.meanings.length === 0) return;
@@ -4251,6 +4266,12 @@
       }
 
       function checkDone() { state.finished++; }
+
+      // 本地词库命中，直接渲染，不走API
+      if (localEntry) {
+        doRender();
+        return;
+      }
 
       // 请求1: MyMemory翻译 (原生CORS, 最快, 提供中文翻译)
       fetchWithTimeout('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(word) + '&langpair=en|zh-CN', 2000)
